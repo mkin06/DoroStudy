@@ -1,0 +1,14 @@
+spring.application.names=studyfocus
+spring.datasource.url=jdbc:mysql://localhost:3306/studyfocus
+spring.datasource.username=[ENTER USERNAME]
+spring.datasource.password=[ENTER PASSWORD]
+
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQLDialect
+spring.jpa.open-in-view=false
+
+spring.jpa.properties.hibernate.format_sql=false
+logging.level.org.hibernate.SQL=WARN
+logging.level.org.hibernate.type.descriptor.sql=WARN
+server.port=8080

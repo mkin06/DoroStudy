@@ -1,0 +1,469 @@
+/* ========== MODAL BACKDROP ========== */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    pointer-events: none;
+}
+
+
+/* ========== MODAL CONTENT ========== */
+.modal-content {
+    background: #1a1a1a;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 480px;
+    color: white;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+    position: relative;
+    pointer-events: auto;
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ========== CLOSE BUTTON ========== */
+.modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    line-height: 1;
+    transition: all 0.2s;
+    z-index: 10;
+}
+
+.modal-close:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+}
+
+/* ========== TABS ========== */
+.modal-tabs {
+    display: flex;
+    gap: 8px;
+    padding: 20px 56px 0 20px;
+}
+
+.modal-tab {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    border-radius: 10px;
+    padding: 12px 16px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.modal-tab:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.modal-tab.active {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+}
+
+.tab-icon {
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+/* ========== PRESET INFO DISPLAY (THÊM MỚI) ========== */
+.preset-info-display {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.preset-info-title {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+.preset-info-details {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 400;
+}
+
+
+/* ========== MODAL BODY ========== */
+.modal-body {
+    padding: 24px 20px;
+    background: transparent;
+    border-radius: 0 0 16px 16px;
+}
+
+/* ========== MODAL ROWS ========== */
+.modal-row {
+    margin-bottom: 24px;
+}
+
+/* ========== PRESET SECTION ========== */
+.preset-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.preset-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.8);
+    min-width: 70px;
+}
+
+.preset-dropdown-container {
+    flex: 1;
+    position: relative;
+}
+
+/* ========== DROPDOWN TRIGGER ========== */
+.preset-dropdown-trigger {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+}
+
+.preset-dropdown-trigger:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.25);
+    transform: translateY(-1px);
+}
+
+.preset-name {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.preset-time-inline {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 13px;
+    margin-left: auto;
+    margin-right: 6px;
+}
+
+.dropdown-arrow {
+    font-size: 10px;
+    opacity: 0.5;
+    transition: transform 0.2s;
+}
+
+.preset-dropdown-trigger:hover .dropdown-arrow {
+    transform: translateY(-2px);
+}
+
+/* ========== DROPDOWN MENU ========== */
+.preset-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: #0f172a;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.7);
+    z-index: 100;
+    animation: dropdownFadeIn 0.2s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ========== PRESET OPTIONS ========== */
+.preset-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.preset-option:last-of-type {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.preset-option:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.preset-option.active {
+    background: rgba(99, 102, 241, 0.15);
+    border-left: 3px solid #818cf8;
+}
+
+.preset-option-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+}
+
+.preset-option-name {
+    font-size: 15px;
+    color: white;
+    font-weight: 600;
+}
+
+.preset-option-time {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* ========== DELETE BUTTON ========== */
+.preset-delete-btn {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px 8px;
+    opacity: 0;
+    transition: all 0.2s;
+    color: rgba(239, 68, 68, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.preset-option:hover .preset-delete-btn {
+    opacity: 1;
+}
+
+.preset-delete-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.4);
+    transform: scale(1.1);
+    color: rgba(239, 68, 68, 1);
+}
+
+/* ========== ADD CUSTOM PRESET ========== */
+.preset-add-btn {
+    width: 100%;
+    background: rgba(99, 102, 241, 0.12);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    padding: 16px 18px;
+    color: #a5b4fc;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.2s;
+}
+
+.preset-add-btn:hover {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: rgba(99, 102, 241, 0.3);
+    color: #c7d2fe;
+}
+
+.add-icon {
+    font-size: 22px;
+    font-weight: 300;
+}
+
+/* ========== TOGGLE ROWS ========== */
+.toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.toggle-row:last-of-type {
+    border-bottom: none;
+    margin-bottom: 12px;
+}
+
+.toggle-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.toggle-icon {
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Modal SVG icon - same style as footer icons */
+.modal-icon-svg {
+    width: 18px;
+    height: 18px;
+    display: inline-block;
+    filter: invert(1) brightness(1.2) contrast(1.1);
+    transition: filter 0.2s ease;
+}
+
+/* ========== TOGGLE SWITCH ========== */
+.toggle-switch {
+    position: relative;
+    width: 52px;
+    height: 28px;
+    cursor: pointer;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 34px;
+    transition: all 0.3s;
+}
+
+.toggle-slider:before {
+    content: '';
+    position: absolute;
+    height: 22px;
+    width: 22px;
+    left: 3px;
+    bottom: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: all 0.3s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+    background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(24px);
+}
+
+.toggle-switch:hover .toggle-slider {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.toggle-switch input:checked:hover + .toggle-slider {
+    background: linear-gradient(135deg, #a5b4fc 0%, #818cf8 100%);
+}
+
+/* ========== INFO TEXT ========== */
+.modal-info {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 16px;
+    line-height: 1.6;
+}
+
+.extension-link {
+    color: #60a5fa;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.extension-link:hover {
+    color: #93c5fd;
+    text-decoration: underline;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 640px) {
+    .modal-content {
+        width: 95%;
+        max-width: none;
+        margin: 20px;
+    }
+
+    .modal-body {
+        padding: 24px 20px;
+    }
+
+    .preset-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .preset-label {
+        min-width: auto;
+    }
+
+    .preset-dropdown-container {
+        width: 100%;
+    }
+}
