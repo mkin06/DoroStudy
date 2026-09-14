@@ -21,10 +21,12 @@ frontend/node_modules/
 frontend/dist/
 
 # Nested / wrong repo
-studyfocus/
+/studyfocus/
 frontend/.env
 .vscode/
 .vscode/
 
 
 backlogs.md
+ai-service/__pycache__
+.venv

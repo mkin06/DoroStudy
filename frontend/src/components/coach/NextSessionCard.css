@@ -1,0 +1,197 @@
+/* ==========================================================================
+   Thẻ Focus Coach — nằm giữa ô Task và nút Start trên nền ảnh của timer.
+
+   Nguyên tắc trình bày: thẻ này KHÔNG được tranh chỗ với đồng hồ. Nền mờ tối,
+   viền mảnh, chữ nhỏ hơn một nấc so với khu vực điều khiển; chỉ khi user chủ động
+   mở rộng nó mới chiếm thêm không gian.
+   ========================================================================== */
+
+.coach-card {
+    width: 100%;
+    max-width: 520px;
+    margin: 10px auto 0;
+    background: rgba(0, 0, 0, 0.42);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 14px;
+    color: #fff;
+    overflow: hidden;
+    animation: coachFadeIn 0.35s ease-out;
+}
+
+@keyframes coachFadeIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Dải màu trái báo phán quyết khung giờ — kênh phụ, không phải kênh duy nhất:
+   nội dung luôn kèm icon và chữ nên người không phân biệt được màu vẫn đọc đủ nghĩa. */
+.coach-card.good   { border-left: 3px solid #4ade80; }
+.coach-card.ok     { border-left: 3px solid #fbbf24; }
+.coach-card.poor   { border-left: 3px solid #fb923c; }
+.coach-card.unknown{ border-left: 3px solid rgba(255, 255, 255, 0.3); }
+
+/* ========== DÒNG THU GỌN ========== */
+
+.coach-summary {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: none;
+    border: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.coach-summary:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.coach-verdict {
+    font-size: 13px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.coach-headline {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.coach-prediction {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.coach-prediction strong {
+    font-size: 18px;
+    font-weight: 700;
+    color: #ffd479;
+}
+
+.coach-prediction-label {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.coach-chevron {
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.45);
+    flex-shrink: 0;
+}
+
+/* ========== PHẦN MỞ RỘNG ========== */
+
+.coach-body {
+    padding: 0 14px 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 10px;
+}
+
+.coach-timing,
+.coach-guardrail,
+.coach-streak {
+    margin: 0 0 8px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    padding: 8px 10px;
+    border-radius: 9px;
+}
+
+.coach-timing {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.88);
+}
+
+.coach-timing.poor {
+    background: rgba(251, 146, 60, 0.14);
+    color: #fed7aa;
+}
+
+.coach-timing.good {
+    background: rgba(74, 222, 128, 0.12);
+    color: #bbf7d0;
+}
+
+/* Biện pháp chặn là việc user phải LÀM, nên nó được làm nổi hơn phần giải thích */
+.coach-guardrail {
+    background: rgba(226, 87, 76, 0.16);
+    color: #ffd4d0;
+    font-weight: 500;
+}
+
+.coach-streak {
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.coach-reasons {
+    margin: 0 0 10px;
+    padding-left: 16px;
+    font-size: 11.5px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.coach-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.coach-meta {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.45);
+    flex: 1;
+    min-width: 180px;
+}
+
+.coach-apply {
+    background: #e2574c;
+    border: none;
+    border-radius: 9px;
+    color: #fff;
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: background 0.2s, opacity 0.2s;
+    white-space: nowrap;
+}
+
+.coach-apply:hover:not(:disabled) {
+    background: #f0655a;
+}
+
+.coach-apply:disabled {
+    background: rgba(74, 222, 128, 0.22);
+    color: #bbf7d0;
+    cursor: default;
+}
+
+@media (max-width: 600px) {
+    .coach-card {
+        max-width: 100%;
+    }
+
+    .coach-prediction-label {
+        display: none;
+    }
+
+    .coach-headline {
+        font-size: 13px;
+    }
+}
