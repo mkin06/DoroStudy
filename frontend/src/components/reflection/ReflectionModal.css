@@ -1,0 +1,727 @@
+/* ========== BACKDROP ========== */
+.reflection-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+/* ========== MODAL ========== */
+.reflection-modal {
+    background: #1a1a1a;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 440px;
+    max-height: 85vh;
+    overflow-y: auto;
+    color: white;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+    position: relative;
+    padding: 28px 24px 24px;
+    animation: reflectionSlideIn 0.3s ease-out;
+}
+
+@keyframes reflectionSlideIn {
+    from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.reflection-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.reflection-close:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+}
+
+.reflection-title {
+    margin: 0 24px 4px 0;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.reflection-subtitle {
+    margin: 0 0 20px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.reflection-error {
+    background: rgba(255, 80, 80, 0.15);
+    border: 1px solid rgba(255, 80, 80, 0.4);
+    color: #ff9c9c;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13px;
+    margin-bottom: 16px;
+}
+
+/* ========== QUESTIONS ========== */
+.reflection-question {
+    margin-bottom: 22px;
+}
+
+.reflection-question label,
+.reflection-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.reflection-slider-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.reflection-slider-row input[type="range"] {
+    flex: 1;
+    accent-color: #e2574c;
+    cursor: pointer;
+}
+
+.reflection-slider-value {
+    min-width: 48px;
+    text-align: right;
+    font-weight: 700;
+    font-size: 16px;
+    color: #e2574c;
+}
+
+.reflection-emoji-row {
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+}
+
+.reflection-emoji {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid transparent;
+    border-radius: 12px;
+    font-size: 26px;
+    padding: 10px 0;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.reflection-emoji:hover {
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateY(-2px);
+}
+
+.reflection-emoji.selected {
+    background: rgba(226, 87, 76, 0.2);
+    border-color: #e2574c;
+}
+
+.reflection-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.reflection-chip {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 13px;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.reflection-chip:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.reflection-chip.selected {
+    background: rgba(226, 87, 76, 0.25);
+    border-color: #e2574c;
+    color: white;
+}
+
+/* ========== ACTIONS ========== */
+.reflection-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.reflection-skip {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.06);
+    border: none;
+    border-radius: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 14px;
+    padding: 13px 0;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.reflection-skip:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: white;
+}
+
+.reflection-submit {
+    flex: 2;
+    background: #e2574c;
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 13px 0;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.reflection-submit:hover:not(:disabled) {
+    background: #f06a5f;
+}
+
+.reflection-submit:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ========== LOADING ========== */
+.reflection-loading {
+    text-align: center;
+    padding: 40px 0 28px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.reflection-spinner {
+    width: 42px;
+    height: 42px;
+    margin: 0 auto 16px;
+    border: 4px solid rgba(255, 255, 255, 0.15);
+    border-top-color: #e2574c;
+    border-radius: 50%;
+    animation: reflectionSpin 0.8s linear infinite;
+}
+
+@keyframes reflectionSpin {
+    to { transform: rotate(360deg); }
+}
+
+/* ========== FEEDBACK ========== */
+.reflection-score {
+    text-align: center;
+    margin: 6px 0 18px;
+}
+
+/* Emoji + từ đứng trước, con số lùi xuống thành dòng phụ bấm được để hỏi "tính kiểu gì?".
+   Thứ tự này là toàn bộ điểm mấu chốt: user đọc "Tốt" trong nửa giây, còn muốn biết
+   78/100 nghĩa là gì thì tự bấm. */
+.reflection-score-emoji {
+    display: block;
+    font-size: 40px;
+    line-height: 1.1;
+}
+
+.reflection-score-band {
+    display: block;
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.2;
+    margin-top: 2px;
+}
+
+.reflection-score.excellent .reflection-score-band { color: #fbbf24; }
+.reflection-score.good      .reflection-score-band { color: #4ade80; }
+.reflection-score.ok        .reflection-score-band { color: #e5e7eb; }
+.reflection-score.low       .reflection-score-band { color: #fb923c; }
+.reflection-score.poor      .reflection-score-band { color: #f87171; }
+
+.reflection-delta {
+    display: block;
+    font-size: 13px;
+    margin-top: 3px;
+}
+
+.reflection-delta.up   { color: #86efac; }
+.reflection-delta.down { color: #fca5a5; }
+.reflection-delta.flat { color: rgba(255, 255, 255, 0.5); }
+
+.reflection-score-meta {
+    background: none;
+    border: none;
+    margin-top: 6px;
+    padding: 2px 4px;
+    font-size: 11.5px;
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+}
+
+.reflection-score-meta:hover {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.reflection-score-help {
+    margin: 6px auto 0;
+    max-width: 320px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 9px;
+    padding: 9px 11px;
+    font-size: 11.5px;
+    line-height: 1.55;
+    color: rgba(255, 255, 255, 0.72);
+    text-align: left;
+}
+
+.reflection-feedback {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.reflection-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 14px 16px;
+}
+
+.reflection-card.highlight {
+    background: rgba(226, 87, 76, 0.12);
+    border: 1px solid rgba(226, 87, 76, 0.35);
+}
+
+.reflection-unavailable {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 10px 0 20px;
+}
+
+/* Thanh đếm ngược 15 giây của popup reflection */
+.reflection-countdown {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+  margin: 0 0 18px;
+}
+
+.reflection-countdown-bar {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #6ee7b7, #3b82f6);
+  transition: width 1s linear;
+}
+
+/* ===== Màn hình kết quả: ưu tiên tín hiệu thị giác hơn chữ ===== */
+
+.reflection-result {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Hàng năng lượng (⚡ 1-5) */
+.reflection-energy-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.reflection-energy {
+  flex: 1;
+  padding: 8px 0;
+  font-size: 20px;
+  line-height: 1;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
+  filter: grayscale(1) opacity(0.35);
+  transition: filter 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.reflection-energy:hover {
+  transform: translateY(-1px);
+}
+
+.reflection-energy.filled {
+  filter: none;
+  border-color: rgba(250, 204, 21, 0.6);
+  background: rgba(250, 204, 21, 0.12);
+}
+
+/* Điểm số + chênh lệch so với phiên trước */
+.reflection-delta {
+  font-size: 15px;
+  font-weight: 700;
+  margin-left: 8px;
+  vertical-align: super;
+}
+
+.reflection-delta.up {
+  color: #34d399;
+}
+
+.reflection-delta.down {
+  color: #f87171;
+}
+
+/* Huy hiệu: kỷ lục, chuỗi ngày */
+.reflection-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.reflection-badge {
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.reflection-badge.best {
+  background: rgba(250, 204, 21, 0.15);
+  color: #fde68a;
+  border: 1px solid rgba(250, 204, 21, 0.35);
+}
+
+.reflection-badge.streak {
+  background: rgba(249, 115, 22, 0.15);
+  color: #fdba74;
+  border: 1px solid rgba(249, 115, 22, 0.35);
+}
+
+/* Phát hiện vừa mở khoá */
+.reflection-section-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.7;
+  margin-bottom: 8px;
+}
+
+.reflection-discovery {
+  display: flex;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.reflection-discovery-icon {
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.reflection-discovery strong {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 3px;
+}
+
+.reflection-discovery p {
+  margin: 0 0 4px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.reflection-discovery-evidence {
+  font-size: 11px;
+  opacity: 0.55;
+}
+
+/* Móc kéo quay lại: mốc mở khoá kế tiếp */
+.reflection-unlock {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* ========== HÀNG HUY HIỆU ==========
+   Chip dự đoán nằm chung hàng với kỷ lục và chuỗi ngày thay vì chiếm một khối riêng:
+   cùng là "liếc một cái là biết", không cái nào đáng một đoạn văn. */
+.reflection-badge.predict {
+    background: rgba(139, 92, 246, 0.18);
+    border: 1px solid rgba(139, 92, 246, 0.35);
+    color: #ddd6fe;
+}
+
+/* ========== GHI CHÚ TRONG PHIÊN ==========
+   Bằng chứng khách quan duy nhất trên màn hình này, nên nó có màu riêng và đứng ngay
+   trên phần hành động. */
+.reflection-note-insight {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 11px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    font-size: 12.5px;
+    line-height: 1.45;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.85);
+}
+
+/* Khai một đằng viết một nẻo — câu nặng nhất hệ thống dám nói, nên nhìn phải khác hẳn */
+.reflection-note-insight.mismatch {
+    background: rgba(251, 146, 60, 0.16);
+    border-color: rgba(251, 146, 60, 0.4);
+    color: #fed7aa;
+}
+
+.reflection-note-insight.on_track {
+    background: rgba(74, 222, 128, 0.12);
+    border-color: rgba(74, 222, 128, 0.3);
+    color: #bbf7d0;
+}
+
+.reflection-note-insight.subject_detected {
+    background: rgba(96, 165, 250, 0.14);
+    border-color: rgba(96, 165, 250, 0.35);
+    color: #bfdbfe;
+}
+
+.reflection-note-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.reflection-note-text {
+    flex: 1;
+}
+
+.reflection-note-adopt {
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.14);
+    border: none;
+    border-radius: 7px;
+    color: #fff;
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 5px 9px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.reflection-note-adopt:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.24);
+}
+
+.reflection-note-adopt:disabled {
+    background: rgba(74, 222, 128, 0.25);
+    cursor: default;
+}
+
+/* ========== HÀNH ĐỘNG CHO PHIÊN SAU ==========
+   Icon lớn bên trái thay cho dòng tiêu đề "🎯 Làm điều này ở phiên sau" — bớt được một
+   dòng chữ mà vẫn nói rõ đây là việc phải làm. */
+.reflection-card.highlight {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+}
+
+.reflection-card.highlight p {
+    margin: 0;
+    font-size: 13.5px;
+    line-height: 1.5;
+}
+
+.reflection-action-icon {
+    font-size: 24px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+/* ========== PHÁT HIỆN VỪA MỞ KHOÁ (dạng chip) ========== */
+.reflection-unlocked-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.reflection-unlocked-chip {
+    background: rgba(255, 214, 121, 0.16);
+    border: 1px solid rgba(255, 214, 121, 0.32);
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 11.5px;
+    color: #ffe4a8;
+    cursor: default;
+}
+
+/* ========== CHI TIẾT (thu gọn mặc định) ========== */
+.reflection-details-toggle {
+    width: 100%;
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 11.5px;
+    padding: 4px 0 8px;
+    cursor: pointer;
+}
+
+.reflection-details-toggle:hover {
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.reflection-details {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 10px;
+    margin-bottom: 10px;
+}
+
+.reflection-detail-line {
+    margin: 0 0 7px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.reflection-detail-line.muted {
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 11.5px;
+}
+
+/* ========== MỐC MỞ KHOÁ KẾ TIẾP ========== */
+.reflection-unlock {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 9px 11px;
+    margin-bottom: 12px;
+    font-size: 12.5px;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+/* Ghi chú gõ bừa: không khen, không trách — chỉ nói thẳng là chưa đọc được, kèm việc cần làm */
+.reflection-note-insight.unreadable {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.14);
+    color: rgba(255, 255, 255, 0.62);
+}
+
+/* ==========================================================================
+   KHỐI CÓ NHÃN: Vì sao / Phiên sau / Đang thấy ở bạn
+
+   Ba khối trả lời ba câu hỏi khác nhau, nên phải tách bằng nhãn chứ không trộn
+   thành một dòng chảy văn xuôi. Mỗi dòng bên trong là MỘT ý, mở đầu bằng icon —
+   user quét mắt theo cột icon là nắm được cả màn hình mà không cần đọc hết chữ.
+   ========================================================================== */
+
+.reflection-block {
+    margin-bottom: 12px;
+}
+
+.reflection-block-label {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.35);
+    margin-bottom: 5px;
+}
+
+.reflection-line {
+    margin: 0 0 5px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.82);
+}
+
+/* Việc phải LÀM được làm nổi hơn phần giải thích */
+.reflection-line.action {
+    background: rgba(226, 87, 76, 0.13);
+    border: 1px solid rgba(226, 87, 76, 0.3);
+    border-radius: 9px;
+    padding: 8px 10px;
+    color: #ffd9d4;
+    font-weight: 500;
+}
+
+/* ========== CHIP KẾ HOẠCH PHIÊN SAU ==========
+   Ba con số user cần: bao nhiêu phút, môn gì, mấy giờ. Dạng chip vì chúng là dữ
+   liệu rời rạc, không phải một câu — và vì cạnh chúng là nút áp dụng ngay. */
+.reflection-block.plan {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 12px;
+    padding: 10px 12px;
+}
+
+.reflection-plan-chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.reflection-plan-chip {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.reflection-plan-apply {
+    margin-left: auto;
+    background: #e2574c;
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 7px 12px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.reflection-plan-apply:hover:not(:disabled) {
+    background: #f0655a;
+}
+
+.reflection-plan-apply:disabled {
+    background: rgba(74, 222, 128, 0.22);
+    color: #bbf7d0;
+    cursor: default;
+}
+
+.reflection-unlocked-chip {
+    cursor: help;
+}

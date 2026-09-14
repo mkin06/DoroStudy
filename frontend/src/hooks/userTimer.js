@@ -8,6 +8,21 @@
 //quản lý trạng thái và logic của bộ đếm thời gian
 import { useState, useEffect, useRef, useCallback } from 'react';
 
+/**
+ * Nhịp đồng hồ tính bằng ms. Mặc định 1000 = thời gian thật.
+ *
+ * Khi cần test nhanh luồng "kết thúc phiên -> popup reflection -> feedback AI" mà không
+ * phải ngồi chờ đủ 25 phút, đặt VITE_TIMER_TICK_MS trong frontend/.env rồi khởi động lại
+ * dev server (Vite chỉ đọc .env lúc start):
+ *
+ *   VITE_TIMER_TICK_MS=50    -> phiên 25 phút chạy hết trong 75 giây
+ *   VITE_TIMER_TICK_MS=20    -> phiên 25 phút chạy hết trong 30 giây
+ *
+ * Để qua env thay vì sửa thẳng số 1000 ở dưới, vì sửa tay rất dễ lỡ commit một đồng hồ
+ * chạy nhanh gấp 20 lần lên production. frontend/.env đã nằm trong .gitignore.
+ */
+const TICK_MS = Number(import.meta.env.VITE_TIMER_TICK_MS) || 1000;
+
 export default function useTimer(initialMinutes = 25){
     const toSeconds = useCallback((valueInMinutes) => {
         return Math.max(0, Math.round(Number(valueInMinutes || 0) * 60));
@@ -28,7 +43,7 @@ export default function useTimer(initialMinutes = 25){
                     }
                     return prev - 1;
                 });
-            }, 1000);
+            }, TICK_MS);
         } else {
             clearInterval(intervalRef.current);
         }

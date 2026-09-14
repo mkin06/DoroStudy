@@ -310,3 +310,33 @@ CREATE TABLE IF NOT EXISTS room_users (
     FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------------------
+-- 18. push_subscriptions (Web Push — kênh nhắc chủ động)
+--
+-- Một user có thể có nhiều bản ghi: mỗi cài đặt trình duyệt là một endpoint riêng.
+-- p256dh/auth chỉ cần khi gửi push CÓ payload; hiện hệ thống gửi push rỗng rồi để service
+-- worker tự gọi API lấy nội dung, nhưng vẫn lưu vì trình duyệt chỉ cấp chúng một lần.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+    id              BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id         BIGINT NOT NULL,
+
+    endpoint        VARCHAR(512) NOT NULL,
+    p256dh          VARCHAR(255) NULL,
+    auth            VARCHAR(255) NULL,
+
+    -- chặn nhắc quá một lần mỗi ngày, và để đo loại nhắc nào hiệu quả
+    last_nudged_at  DATETIME NULL,
+    last_nudge_type VARCHAR(40) NULL,
+
+    -- false khi push service báo đăng ký đã chết (404/410); giữ bản ghi để phân biệt
+    -- "từng bật rồi mất" với "chưa bao giờ bật"
+    active          BOOLEAN NOT NULL DEFAULT TRUE,
+
+    created_at      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE KEY uk_push_subscription_endpoint (endpoint),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_push_subscriptions_active (active)
+) ENGINE=InnoDB;

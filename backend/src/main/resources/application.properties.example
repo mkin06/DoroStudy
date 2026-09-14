@@ -12,3 +12,71 @@ spring.jpa.properties.hibernate.format_sql=false
 logging.level.org.hibernate.SQL=WARN
 logging.level.org.hibernate.type.descriptor.sql=WARN
 server.port=8080
+
+# Python AI service (FastAPI)
+ai.service.url=${AI_SERVICE_URL:http://localhost:8000}
+ai.service.connect-timeout-ms=2000
+ai.service.read-timeout-ms=5000
+
+# ---------------------------------------------------------------------
+# Redis — dùng để đếm quota gọi AI theo user theo ngày.
+# Không bắt buộc: nếu Redis không chạy, AiRateLimiter tự đếm in-memory và chỉ log warning,
+# nên `mvnw spring-boot:run` vẫn khởi động được trên máy chưa cài Redis.
+# Timeout để ngắn vì mỗi request chỉ có 4 giây ngân sách phản hồi.
+# ---------------------------------------------------------------------
+spring.data.redis.host=${REDIS_HOST:localhost}
+spring.data.redis.port=${REDIS_PORT:6379}
+spring.data.redis.timeout=500ms
+spring.data.redis.connect-timeout=500ms
+
+# ---------------------------------------------------------------------
+# Quota gọi AI mỗi ngày theo gói cước (COGS biến đổi — cấu hình được, không hardcode).
+# Giá trị âm = không giới hạn.
+# ---------------------------------------------------------------------
+ai.quota.limits.FREE=${AI_QUOTA_FREE:3}
+ai.quota.limits.PREMIUM=${AI_QUOTA_PREMIUM:50}
+# Giới hạn tính năng Freemium theo gói (âm = không giới hạn).
+# Phần lõi (điểm tập trung, chuỗi ngày, độ dài tối ưu, ngưỡng năng lượng, cảnh báo tụt nhịp)
+# KHÔNG bị giới hạn ở gói nào — nó chạy cục bộ, không tốn COGS, và là lý do user quay lại.
+ai.quota.plans.FREE.subject-insight-limit=${AI_FREE_SUBJECTS:1}
+ai.quota.plans.FREE.history-days=${AI_FREE_HISTORY_DAYS:30}
+ai.quota.plans.PREMIUM.subject-insight-limit=-1
+ai.quota.plans.PREMIUM.history-days=-1
+
+ai.quota.default-plan=FREE
+ai.quota.zone=Asia/Ho_Chi_Minh
+
+# Múi giờ dùng khi tính khung giờ tập trung tốt nhất
+ai.insights.zone=Asia/Ho_Chi_Minh
+
+# ---------------------------------------------------------------------
+# Nhắc chủ động (Web Push).
+#
+# Mặc định TẮT. Phần nhắc TRONG APP (banner khi user mở app) luôn chạy; chỉ kênh đẩy ra
+# ngoài trình duyệt mới cần cấu hình ở đây.
+#
+# Sinh cặp khoá VAPID một lần cho mỗi môi trường:
+#   cd backend
+#   mvnw -o compile
+#   java -cp target/classes org.devnqminh.studyfocus.service.nudge.VapidKeyGenerator
+#
+# Đổi khoá = mọi đăng ký nhận thông báo hiện có chết, nên sinh một lần rồi giữ nguyên.
+# private-key là BÍ MẬT — file application.properties thật không được commit.
+# ---------------------------------------------------------------------
+nudge.enabled=${NUDGE_ENABLED:false}
+nudge.vapid.public-key=${VAPID_PUBLIC_KEY:}
+nudge.vapid.private-key=${VAPID_PRIVATE_KEY:}
+nudge.vapid.subject=${VAPID_SUBJECT:mailto:admin@dorostudy.local}
+
+# Chỉ lời nhắc từ mức khẩn cấp này trở lên mới được đẩy ra ngoài app.
+# 70 = chỉ "chuỗi ngày sắp đứt" (90) và "đang tụt nhịp" (80); các loại còn lại chỉ hiện
+# trong app. Hạ ngưỡng xuống là đánh đổi trực tiếp bằng tỉ lệ user tắt quyền thông báo.
+nudge.push-urgency-threshold=${NUDGE_PUSH_THRESHOLD:70}
+
+# Không đẩy thông báo trong khoảng này (vắt qua nửa đêm được)
+nudge.quiet-hours-from=22
+nudge.quiet-hours-to=7
+
+nudge.zone=Asia/Ho_Chi_Minh
+# Quét mỗi giờ đúng phút 0
+nudge.scan-cron=0 0 * * * *

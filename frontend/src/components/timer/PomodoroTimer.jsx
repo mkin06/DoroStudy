@@ -11,6 +11,10 @@ import { useToast } from '../../contexts/ToastContext';
 import NotesPanel from '../notes/NotesPanel';
 import MusicModal from './MusicModal';
 import BackgroundModal from './BackgroundModal';
+import ReflectionModal from '../reflection/ReflectionModal';
+import FocusProfilePanel from '../insights/FocusProfilePanel';
+import NextSessionCard from '../coach/NextSessionCard';
+import NudgeBanner from '../coach/NudgeBanner';
 
 // SVG Icon imports
 import upgradeIcon from '../../assets/user-menu/gift.svg';
@@ -41,6 +45,7 @@ import settingClockIcon from '../../assets/user-menu/settingClock.svg';
 const MENU_ITEMS = [
   { id: 'upgrade', icon: upgradeIcon, text: 'Upgrade to Plus', arrow: true, type: 'svg' },
   { id: 'profile', icon: profileIcon, text: 'Public profile', arrow: true, type: 'svg' },
+  { id: 'focusdna', icon: '🧬', text: 'Focus DNA', arrow: true, type: 'emoji' },
   { id: 'room', icon: roomIcon, text: 'Find study room', arrow: true, type: 'svg' },
   { id: 'settings', icon: settingsIcon, text: 'App settings', arrow: true, type: 'svg' },
   { id: 'friends', icon: friendIcon, text: 'Manage friends', arrow: true, type: 'svg' },
@@ -215,6 +220,18 @@ export default function PomodoroTimer() {
   const [showMusic, setShowMusic] = useState(false);
   const [musicVideoId, setMusicVideoId] = useState('jfKfPfyJRdk'); // default lofi girl stream
   const [showBackground, setShowBackground] = useState(false);
+  // sessionId của phiên vừa lưu — có giá trị thì hiện popup reflection
+  const [reflectionSessionId, setReflectionSessionId] = useState(null);
+  const [showFocusProfile, setShowFocusProfile] = useState(false);
+  // Đổi giá trị để buộc thẻ Focus Coach tải lại kế hoạch — sau mỗi phiên, dữ liệu mới đã
+  // vào hồ sơ nên kế hoạch cũ không còn đúng nữa.
+  const [coachRefreshKey, setCoachRefreshKey] = useState(0);
+  // Chốt chặn lưu trùng: effect auto-save chạy lại mỗi khi render trong lúc timer ở 00:00
+  // (đổi task, StrictMode double-invoke...) nên phải nhớ đã lưu phiên nào chưa.
+  const savingSessionRef = useRef(false);
+  // Thời điểm user bấm Start — gửi lên backend để Meta-Learning biết đúng khung giờ học
+  const sessionStartedAtRef = useRef(null);
+
   const [scene, setScene] = useState({
     type: 'image',
     url: backgroundImage,
@@ -274,29 +291,32 @@ export default function PomodoroTimer() {
     }
   }, [minutes, seconds, isRunning, toggleTimer]);
 
-   // ========== AUTO SAVE SESSION WHEN TIMER COMPLETES ==========
+  // Người dùng bấm vào thông báo đẩy: service worker mở app kèm kế hoạch trên URL.
+  // Áp luôn rồi dọn URL — để lại query string thì F5 một cái là timer bị đặt lại lần nữa.
   useEffect(() => {
-    // Khi timer về 00:00 (minutes === 0 && seconds === 0) và không chạy
-    if (minutes === 0 && seconds === 0 && !isRunning && currentPreset === 0) {
-      // Chỉ lưu khi là phiên Pomodoro (currentPreset === 0)
-      const saveSession = async () => {
-        try {
-          await studySessionAPI.createSession({
-            duration: presetTimes[0],
-            breakTime: presetTimes[1],
-            count: 1,
-            mode
-          });
-          toast.success('Session saved!');
-          handleSkipToBreak();
-        } catch (error) {
-          toast.error(error.message || 'Failed to save session.');
-        }
-      };
-      
-      saveSession();
+    const params = new URLSearchParams(window.location.search);
+    const minutes = Number(params.get('nudgeMinutes'));
+    const subject = params.get('nudgeSubject');
+    if (!minutes && !subject) return;
+
+    if (minutes > 0) {
+      setPresetTimes((prev) => [minutes, prev[1], prev[2]]);
+      setTime?.(minutes);
+      setCurrentPreset(0);
     }
-  }, [minutes, seconds, isRunning, currentPreset, presetTimes, mode]);
+    if (subject) {
+      setTask(subject);
+    }
+    window.history.replaceState({}, '', window.location.pathname);
+  }, [setTime]);
+
+  // Ghi lại thời điểm bắt đầu phiên Pomodoro để gửi kèm khi lưu
+  useEffect(() => {
+    if (isRunning && currentPreset === 0 && sessionStartedAtRef.current === null) {
+      sessionStartedAtRef.current = new Date().toISOString();
+    }
+  }, [isRunning, currentPreset]);
+
 
 
   // ========== HANDLERS ==========
@@ -315,6 +335,12 @@ export default function PomodoroTimer() {
 const handleMenuItemClick = useCallback(async (itemId) => {
   if (itemId === 'profile') {
     setShowProfile(true);
+    setShowUserMenu(false);
+    return;
+  }
+
+  if (itemId === 'focusdna') {
+    setShowFocusProfile(true);
     setShowUserMenu(false);
     return;
   }
@@ -382,6 +408,28 @@ const handleMenuItemClick = useCallback(async (itemId) => {
     // Đóng modal
     setShowSettings(false);
   }, [currentPreset, setTime]);
+
+  /**
+   * Áp kế hoạch của Focus Coach vào timer: đặt luôn độ dài phiên, độ dài nghỉ và môn học.
+   *
+   * Đây là chỗ vòng lặp khép lại — kết luận AI rút ra từ các phiên trước biến thành thiết
+   * lập thật của phiên sắp tới, chỉ bằng một cú bấm. Bắt user tự vào Settings gõ lại con số
+   * thì phần lớn sẽ không làm, và mọi phân tích phía trước thành vô nghĩa.
+   */
+  const handleApplyCoachPlan = useCallback(({ durationMinutes, breakMinutes, subject }) => {
+    setPresetTimes((prev) => {
+      const next = [durationMinutes, breakMinutes ?? prev[1], prev[2]];
+      // setTime nằm trong updater để luôn dùng đúng bộ preset vừa tính, không phải bộ cũ
+      if (setTime && currentPreset === 0) {
+        setTime(next[0]);
+      }
+      return next;
+    });
+    if (subject) {
+      setTask(subject);
+    }
+    toast.success(`Đã đặt phiên ${durationMinutes} phút${subject ? ` · ${subject}` : ''}`);
+  }, [currentPreset, setTime, toast]);
 
   const handleTogglePiP = useCallback(async () => {
     if (!('documentPictureInPicture' in window)) {
@@ -470,6 +518,47 @@ const handleMenuItemClick = useCallback(async (itemId) => {
       toast.error('Cannot open Picture-in-Picture: ' + error.message);
     }
   }, [minutes, seconds, isRunning, toggleTimer, handleSkipToBreak]);
+
+   // ========== AUTO SAVE SESSION WHEN TIMER COMPLETES ==========
+  useEffect(() => {
+    // Khi timer về 00:00 (minutes === 0 && seconds === 0) và không chạy
+    if (minutes === 0 && seconds === 0 && !isRunning && currentPreset === 0) {
+      // Chỉ lưu khi là phiên Pomodoro (currentPreset === 0), và chỉ lưu một lần
+      if (savingSessionRef.current) return;
+      savingSessionRef.current = true;
+
+      const saveSession = async () => {
+        try {
+          const saved = await studySessionAPI.createSession({
+                      duration: presetTimes[0],
+                      breakTime: presetTimes[1],
+                      count: 1,
+                      mode,
+                      subject: task || null,
+                      startTime: sessionStartedAtRef.current
+                    });
+          toast.success('Session saved!');
+          handleSkipToBreak();
+          // Mở popup reflection (user trả lời trong lúc nghỉ, có thể skip)
+          setReflectionSessionId(saved.id);
+          // Phiên vừa xong đã là dữ liệu mới: buộc coach dựng lại kế hoạch cho lần sau
+          setCoachRefreshKey((k) => k + 1);
+
+        } catch (error) {
+          toast.error(error.message || 'Failed to save session.');
+          // Lưu thất bại thì mở lại chốt để user có thể thử lại phiên sau
+          savingSessionRef.current = false;
+        } finally {
+          sessionStartedAtRef.current = null;
+        }
+      };
+      
+      saveSession();
+    } else if (!(minutes === 0 && seconds === 0)) {
+      // Timer đã rời mốc 00:00 → phiên kế tiếp được phép lưu
+      savingSessionRef.current = false;
+    }
+  }, [minutes, seconds, isRunning, currentPreset, presetTimes, mode, task, handleSkipToBreak, toast]);
 
   const handleTaskChange = useCallback((e) => {
     setTask(e.target.value);
@@ -608,6 +697,18 @@ const handleMenuItemClick = useCallback(async (itemId) => {
           />
         </div>
 
+        {/* Nhắc chủ động: chỉ hiện khi thật sự có chuyện (chuỗi sắp đứt, đang tụt nhịp...) */}
+        <NudgeBanner onAct={handleApplyCoachPlan} refreshKey={coachRefreshKey} />
+
+        {/* AI trước phiên học: gợi ý môn/độ dài/khung giờ và dự đoán điểm.
+            Ẩn khi đang chạy hoặc đang nghỉ — lúc đó user cần đồng hồ, không cần lời khuyên. */}
+        <NextSessionCard
+          subject={task}
+          disabled={isRunning || currentPreset !== 0}
+          onApply={handleApplyCoachPlan}
+          refreshKey={coachRefreshKey}
+        />
+
         <div className="control-section">
           <button
             className="settings-icon-btn"
@@ -699,6 +800,18 @@ const handleMenuItemClick = useCallback(async (itemId) => {
           scene={scene}
           onChangeScene={setScene}
         />
+      )}
+      {showFocusProfile && (
+        <FocusProfilePanel onClose={() => setShowFocusProfile(false)} />
+      )}
+      {reflectionSessionId && (
+              <ReflectionModal
+                sessionId={reflectionSessionId}
+                subject={task || null}
+                onAdoptSubject={(detected) => setTask(detected)}
+                onApplyPlan={handleApplyCoachPlan}
+                onClose={() => setReflectionSessionId(null)}
+              />
       )}
     </div>
   );
