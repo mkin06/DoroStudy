@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Image, CloudRain } from 'lucide-react';
 import './BackgroundModal.css';
 
 const MOTION_PRESETS = [
@@ -6,29 +7,29 @@ const MOTION_PRESETS = [
     id: 'cafe-motion',
     name: 'Cozy Cafe',
     type: 'video',
-    thumbnail: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400&auto=format&fit=crop',
-    url: 'https://assets.codepen.io/6093409/rain.mp4',
+    thumbnail: 'https://i.ytimg.com/vi/35ZAf4uJSWw/maxresdefault.jpg',
+    url: '35ZAf4uJSWw',
   },
   {
     id: 'forest-motion',
     name: 'Cozy Campfire',
     type: 'video',
-    thumbnail: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&auto=format&fit=crop',
-    url: 'https://assets.codepen.io/6093409/campfire.mp4',
+    thumbnail: 'https://i.ytimg.com/vi/nALYrGwgVVo/maxresdefault.jpg',
+    url: 'nALYrGwgVVo',
   },
   {
     id: 'beach-motion',
     name: 'Sandy Beach',
     type: 'video',
-    thumbnail: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&auto=format&fit=crop',
-    url: 'https://assets.codepen.io/6093409/waves.mp4',
+    thumbnail: 'https://i.ytimg.com/vi/LNieCcBSUvY/maxresdefault.jpg',
+    url: 'LNieCcBSUvY',
   },
   {
     id: 'river-motion',
     name: 'Forest Stream',
     type: 'video',
-    thumbnail: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=400&auto=format&fit=crop',
-    url: 'https://assets.codepen.io/6093409/river.mp4',
+    thumbnail: 'https://i.ytimg.com/vi/TGPHm49JLoU/maxresdefault.jpg',
+    url: 'TGPHm49JLoU',
   },
 ];
 
@@ -86,6 +87,7 @@ export default function BackgroundModal({ onClose, scene, onChangeScene }) {
       ...scene,
       type: preset.type,
       url: preset.url,
+      thumbnail: preset.thumbnail,
       id: preset.id,
     });
   };
@@ -99,11 +101,15 @@ export default function BackgroundModal({ onClose, scene, onChangeScene }) {
 
   const handleApplyCustom = (e) => {
     e.preventDefault();
-    if (!customUrl.trim()) return;
+    const url = customUrl.trim();
+    if (!url) return;
+    const isYt = /youtu\.be|youtube\.com/.test(url);
+    const resolvedType = isYt ? 'video' : customType;
     onChangeScene({
       ...scene,
-      type: customType,
-      url: customUrl,
+      type: resolvedType,
+      url: url,
+      thumbnail: resolvedType === 'image' ? url : '',
       id: 'custom',
     });
   };
@@ -145,13 +151,15 @@ export default function BackgroundModal({ onClose, scene, onChangeScene }) {
               className={`btn-category ${category === 'background' ? 'active' : ''}`}
               onClick={() => setCategory('background')}
             >
-              <span className="btn-category-icon">🖼️</span> Background
+              <Image size={15} strokeWidth={2.2} className="btn-category-icon" />
+              <span>Background</span>
             </button>
             <button
               className={`btn-category ${category === 'weather' ? 'active' : ''}`}
               onClick={() => setCategory('weather')}
             >
-              <span className="btn-category-icon">🌧️</span> Weather
+              <CloudRain size={15} strokeWidth={2.2} className="btn-category-icon" />
+              <span>Weather</span>
             </button>
           </div>
         </div>
@@ -184,50 +192,56 @@ export default function BackgroundModal({ onClose, scene, onChangeScene }) {
             {/* Grid display for Motion/Stills */}
             {subTab === 'motion' && (
               <div className="scene-grid scrollable-container">
-                {MOTION_PRESETS.map((preset) => (
-                  <div
-                    key={preset.id}
-                    className={`scene-card ${scene.url === preset.url ? 'active' : ''}`}
-                    onClick={() => selectPreset(preset)}
-                  >
-                    <img src={preset.thumbnail} alt={preset.name} className="scene-thumbnail" />
-                    <div className="play-button-overlay">
-                      <svg className="play-icon-svg" viewBox="0 0 24 24" fill="currentColor">
-                        <polygon points="5 3 19 12 5 21 5 3" />
-                      </svg>
+                {MOTION_PRESETS.map((preset) => {
+                  const isActive = scene.id === preset.id || scene.url === preset.url;
+                  return (
+                    <div
+                      key={preset.id}
+                      className={`scene-card ${isActive ? 'active' : ''}`}
+                      onClick={() => selectPreset(preset)}
+                    >
+                      <img src={preset.thumbnail} alt={preset.name} className="scene-thumbnail" />
+                      <div className="play-button-overlay">
+                        <svg className="play-icon-svg" viewBox="0 0 24 24" fill="currentColor">
+                          <polygon points="5 3 19 12 5 21 5 3" />
+                        </svg>
+                      </div>
+                      <span className="scene-name">{preset.name}</span>
+                      {isActive && <div className="active-badge">✓</div>}
                     </div>
-                    <span className="scene-name">{preset.name}</span>
-                    {scene.url === preset.url && <div className="active-badge">✓</div>}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
             {subTab === 'stills' && (
               <div className="scene-grid scrollable-container">
-                {STILL_PRESETS.map((preset) => (
-                  <div
-                    key={preset.id}
-                    className={`scene-card ${scene.url === preset.url ? 'active' : ''}`}
-                    onClick={() => selectPreset(preset)}
-                  >
-                    <img src={preset.thumbnail} alt={preset.name} className="scene-thumbnail" />
-                    <span className="scene-name">{preset.name}</span>
-                    {scene.url === preset.url && <div className="active-badge">✓</div>}
-                  </div>
-                ))}
+                {STILL_PRESETS.map((preset) => {
+                  const isActive = scene.id === preset.id || scene.url === preset.url;
+                  return (
+                    <div
+                      key={preset.id}
+                      className={`scene-card ${isActive ? 'active' : ''}`}
+                      onClick={() => selectPreset(preset)}
+                    >
+                      <img src={preset.thumbnail} alt={preset.name} className="scene-thumbnail" />
+                      <span className="scene-name">{preset.name}</span>
+                      {isActive && <div className="active-badge">✓</div>}
+                    </div>
+                  );
+                })}
               </div>
             )}
 
             {/* Personalize (Custom URL input) */}
             {subTab === 'personalize' && (
               <form onSubmit={handleApplyCustom} className="personalize-form">
-                <p className="personalize-desc">Paste a direct image or video link (MP4) to set your custom background scene.</p>
+                <p className="personalize-desc">Paste a direct image URL, MP4 video link, or YouTube URL to set your custom background scene.</p>
                 <div className="form-group-scene">
                   <label>Background URL</label>
                   <input
                     type="url"
-                    placeholder="https://example.com/background.jpg"
+                    placeholder="https://youtube.com/watch?v=... or https://example.com/video.mp4"
                     value={customUrl}
                     onChange={(e) => setCustomUrl(e.target.value)}
                     required

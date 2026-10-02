@@ -31,6 +31,20 @@
     object-fit: cover;
     z-index: -2;
 }
+
+.timer-background-iframe {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100vw;
+    height: 56.25vw; /* 100 * 9 / 16 */
+    min-height: 100vh;
+    min-width: 177.78vh; /* 100 * 16 / 9 */
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    border: none;
+    z-index: -2;
+}
 .timer-overlay {
     position: absolute;
     inset: 0;

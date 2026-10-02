@@ -40,6 +40,12 @@ import bellIcon from '../../assets/ground/bell.svg';
 import targetIcon from '../../assets/ground/target.svg';
 import settingClockIcon from '../../assets/user-menu/settingClock.svg';
 
+const getYouTubeId = (url) => {
+  if (!url) return null;
+  if (/^[a-zA-Z0-9_-]{11}$/.test(url)) return url;
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+  return match ? match[1] : null;
+};
 
 // ========== STATIC CONFIGS ==========
 const MENU_ITEMS = [
@@ -235,10 +241,30 @@ export default function PomodoroTimer() {
   const [scene, setScene] = useState({
     type: 'image',
     url: backgroundImage,
+    thumbnail: backgroundImage,
     id: 'default',
     opacity: 0.3,
     weather: 'clear',
   });
+  const [videoError, setVideoError] = useState(false);
+
+  useEffect(() => {
+    setVideoError(false);
+  }, [scene.url]);
+
+  const handleToggleDeepFocus = useCallback(() => {
+    if (!document.fullscreenElement) {
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+      toast.success('⚡ Deep Focus: Đã bật toàn màn hình');
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+      toast.info('Đã thoát Deep Focus');
+    }
+  }, [toast]);
 
   // Refs
   const userMenuRef = useRef(null);
@@ -577,23 +603,46 @@ const handleMenuItemClick = useCallback(async (itemId) => {
   // ========== RENDER ==========
   return (
     <div className="timer-container">
-      {scene.type === 'video' ? (
-        <video
-          key={scene.url}
-          className="timer-background-video"
-          src={scene.url}
-          autoPlay
-          loop
-          muted
-          playsInline
-          role="presentation"
-        />
-      ) : (
-        <div
-          className="timer-background"
-          style={{ backgroundImage: `url(${scene.url})` }}
-          role="presentation"
-        />
+      {/* Underlying thumbnail image layer (ensures zero-flash background) */}
+      <div
+        className="timer-background"
+        style={{ backgroundImage: `url(${scene.thumbnail || (scene.type !== 'video' ? scene.url : '') || backgroundImage})` }}
+        role="presentation"
+      />
+
+      {/* Motion / Video background */}
+      {scene.type === 'video' && !videoError && (
+        (() => {
+          const ytId = getYouTubeId(scene.url);
+          if (ytId) {
+            return (
+              <iframe
+                key={ytId}
+                className="timer-background-iframe"
+                src={`https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${ytId}&playsinline=1&rel=0&showinfo=0&iv_load_policy=3&disablekb=1&modestbranding=1`}
+                title="Focus Scene Background"
+                frameBorder="0"
+                allow="autoplay; encrypted-media"
+                allowFullScreen
+                onError={() => setVideoError(true)}
+              />
+            );
+          }
+          return (
+            <video
+              key={scene.url}
+              className="timer-background-video"
+              src={scene.url}
+              poster={scene.thumbnail}
+              autoPlay
+              loop
+              muted
+              playsInline
+              onError={() => setVideoError(true)}
+              role="presentation"
+            />
+          );
+        })()
       )}
 
       {/* Weather Particle Overlays */}
@@ -613,28 +662,58 @@ const handleMenuItemClick = useCallback(async (itemId) => {
             <img src={targetIcon} alt="" className="logo-icon-svg" width="28" height="28" />
           </span>
           <span className="logo-text">DoroStudy</span>
-          <button className="deep-focus-btn" aria-label="Enter deep focus mode">
+          <button
+            className="deep-focus-btn"
+            onClick={handleToggleDeepFocus}
+            aria-label="Enter deep focus mode"
+            title="Bật/Tắt chế độ tập trung toàn màn hình"
+          >
             <img src={focusLightning} alt="" className="deep-focus-icon" width="16" height="16" />
             Deep Focus
           </button>
         </div>
 
         <div className="header-right">
-          <button className="stat-btn" aria-label="Streak: 1">
+          <button
+            className="stat-btn"
+            aria-label="Streak: 1"
+            title="Chuỗi ngày học tập liên tục (Streak)"
+            onClick={() => toast.info('🔥 Chuỗi học tập: 1 ngày liên tục. Cố lên nhé!')}
+          >
             <img src={fireIcon} alt="" className="header-stat-icon" width="18" height="18" />
             <span>1</span>
           </button>
-          <button className="stat-btn" aria-label="Study time: 0 minutes">
+          <button
+            className="stat-btn"
+            aria-label="Study time: 0 minutes"
+            title="Tổng thời gian tập trung hôm nay"
+            onClick={() => toast.info('⏱️ Tổng thời gian học hôm nay: Hoàn thành phiên để tích lũy!')}
+          >
             <img src={stopwatchIcon} alt="" className="header-stat-icon" width="18" height="18" />
             <span>0m</span>
           </button>
-          <button className="stat-btn" aria-label="Statistics">
+          <button
+            className="stat-btn"
+            aria-label="Statistics"
+            title="Xem hồ sơ tập trung & thống kê (Focus Insights)"
+            onClick={() => setShowFocusProfile(true)}
+          >
             <img src={chartIcon} alt="" className="header-stat-icon" width="18" height="18" />
           </button>
-          <button className="stat-btn" aria-label="Notifications">
+          <button
+            className="stat-btn"
+            aria-label="Notifications"
+            title="Thông báo"
+            onClick={() => toast.info('🔔 Không có thông báo mới. Chúc bạn một phiên học hiệu quả!')}
+          >
             <img src={bellIcon} alt="" className="header-stat-icon" width="18" height="18" />
           </button>
-          <button className="user-menu" aria-label="Enter user's study room">
+          <button
+            className="user-menu"
+            aria-label="Enter user's study room"
+            title="Phòng học cá nhân"
+            onClick={() => toast.info("🏠 Bạn đang ở trong phòng học cá nhân của mình.")}
+          >
             User's room
           </button>
 
@@ -769,10 +848,19 @@ const handleMenuItemClick = useCallback(async (itemId) => {
           onButtonClick={(id) => {
             if (id === 'notes') setShowNotes(true);
             if (id === 'music') setShowMusic(prev => !prev);
-            if (id === 'background') setShowBackground(true);
+            if (id === 'background' || id === 'cloud') setShowBackground(true);
           }}
         />
-        <FooterButtonsGroup buttons={FOOTER_BUTTONS_RIGHT} direction="right" />
+        <FooterButtonsGroup
+          buttons={FOOTER_BUTTONS_RIGHT}
+          direction="right"
+          onButtonClick={(id) => {
+            if (id === 'user') setShowProfile(true);
+            if (id === 'chat') toast.info('💬 Room Chat: Bạn đang ở chế độ phòng học cá nhân.');
+            if (id === 'deepfocus') handleToggleDeepFocus();
+            if (id === 'clock') setShowFocusProfile(true);
+          }}
+        />
       </footer>
 
       {/* SỬA: Truyền handleSettingsPresetChange */}
