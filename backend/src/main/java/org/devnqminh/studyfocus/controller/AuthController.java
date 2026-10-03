@@ -58,4 +58,16 @@ public class AuthController {
             return ResponseEntity.badRequest().body("Register failed: " + e.getMessage());
         }
     }
+
+    @PostMapping("/google")
+    public ResponseEntity<?> googleLogin(@RequestBody org.devnqminh.studyfocus.dto.request.authentication.GoogleAuthRequest request, HttpSession session) {
+        try {
+            LoginResponse response = authService.loginOrRegisterWithGoogle(request.getIdToken());
+            session.setAttribute("USER_ID", response.getUserId());
+            session.setAttribute("USERNAME", response.getUsername());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Google authentication failed: " + e.getMessage()));
+        }
+    }
 }

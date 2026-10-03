@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { User, Lock, Facebook, Twitter } from 'lucide-react';
 import { login } from '../../../api/authentication/auth';
+import GoogleAuthButton from '../GoogleAuthButton';
 import './LoginForm.css';
 
 export default function LoginForm({  }) {
@@ -123,24 +124,14 @@ export default function LoginForm({  }) {
           </div>
 
           <div className="social-buttons">
-            <button
-              onClick={() => handleSocialLogin('Facebook')}
-              className="social-button facebook"
+            <GoogleAuthButton 
+              text="signin_with"
               disabled={loading}
-              type="button"
-            >
-              <Facebook className="social-icon" fill="currentColor" />
-              <span>Facebook</span>
-            </button>
-            <button
-              onClick={() => handleSocialLogin('Twitter')}
-              className="social-button twitter"
-              disabled={loading}
-              type="button"
-            >
-              <Twitter className="social-icon" fill="currentColor" />
-              <span>Twitter</span>
-            </button>
+              onError={(err) => setError(err)}
+              onSuccess={() => {
+                window.location.href = '/';
+              }}
+            />
           </div>
         </form>
 

@@ -33,19 +33,32 @@
   position: relative;
   z-index: 10;
   width: 100%;
-  max-width: 450px;
-  padding: 0 1.5rem;
+  max-width: 448px;
+  padding: 1rem 24px;
+  box-sizing: border-box;
+  max-height: 98vh;
+  overflow-y: auto;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.register-content::-webkit-scrollbar {
+  display: none;
+}
+/* Hide scrollbar for IE, Edge and Firefox */
+.register-content {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
 }
 
 /* Header */
 .register-header {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .register-header h1 {
   color: white;
-  font-size: 3rem;
+  font-size: 2.75rem;
   font-weight: 300;
   letter-spacing: 0.05em;
   margin: 0;
@@ -55,7 +68,7 @@
 .register-form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
 }
 
 /* Error Message */
@@ -168,9 +181,14 @@
 
 /* Social Buttons */
 .register-social-buttons {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.register-social-buttons iframe {
+  border-radius: 0.375rem !important;
 }
 
 .register-social-button {

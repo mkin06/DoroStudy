@@ -4,7 +4,7 @@ import './PomodoroTimer.css';
 import useTimer from '../../hooks/userTimer';
 import backgroundImage from '../../assets/background.jpg';
 import SettingsModal, { PRESETS } from './SettingsModal';
-import { logout } from '../../api/authentication/auth';
+import { logout, me } from '../../api/authentication/auth';
 import ProfilePage from '../profile/UserProfile';
 import { studySessionAPI } from '../../api/studySession';
 import { useToast } from '../../contexts/ToastContext';
@@ -188,12 +188,21 @@ const FooterButtonsGroup = React.memo(({ buttons, direction, onButtonClick }) =>
 });
 FooterButtonsGroup.displayName = 'FooterButtonsGroup';
 
-const UserDropdownHeader = React.memo(({ onClose }) => {
+const UserDropdownHeader = React.memo(({ user, onClose }) => {
+  const displayName = user ? (user.name || user.username) : 'Guest User';
+  const subtitle = user 
+    ? (user.email || (user.status === 'ACTIVE' ? 'Active Member' : 'Member')) 
+    : 'Guest Account';
+
   return (
     <div className="user-dropdown-header">
-      <div>
-        <div className="user-dropdown-title">MegaScholar905</div>
-        <div className="user-dropdown-subtitle">Guest Account</div>
+      <div style={{ maxWidth: '210px', overflow: 'hidden' }}>
+        <div className="user-dropdown-title" title={displayName} style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+          {displayName}
+        </div>
+        <div className="user-dropdown-subtitle" title={subtitle} style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+          {subtitle}
+        </div>
       </div>
       <button
         className="user-dropdown-close"
@@ -229,6 +238,49 @@ export default function PomodoroTimer() {
   // sessionId của phiên vừa lưu — có giá trị thì hiện popup reflection
   const [reflectionSessionId, setReflectionSessionId] = useState(null);
   const [showFocusProfile, setShowFocusProfile] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  // Fetch logged in user profile
+  useEffect(() => {
+    let isMounted = true;
+    me()
+      .then((data) => {
+        if (isMounted && data) {
+          setCurrentUser(data);
+        }
+      })
+      .catch((err) => {
+        console.warn('User not authenticated, running in guest mode:', err);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const userInitials = useMemo(() => {
+    if (!currentUser) return 'G';
+    const nameToUse = currentUser.name || currentUser.username || '';
+    if (!nameToUse) return 'U';
+    const parts = nameToUse.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return nameToUse.slice(0, 2).toUpperCase();
+  }, [currentUser]);
+
+  const footerMenuItems = useMemo(() => {
+    if (!currentUser) {
+      return [
+        { id: 'apps', icon: ourApp, text: 'Our apps', arrow: true, type: 'svg' },
+        { id: 'login', icon: logoutIcon, text: 'Log in / Register', arrow: true, type: 'svg' },
+      ];
+    }
+    return [
+      { id: 'apps', icon: ourApp, text: 'Our apps', arrow: true, type: 'svg' },
+      { id: 'logout', icon: logoutIcon, text: 'Logout', external: true, type: 'svg' },
+    ];
+  }, [currentUser]);
+
   // Đổi giá trị để buộc thẻ Focus Coach tải lại kế hoạch — sau mỗi phiên, dữ liệu mới đã
   // vào hồ sơ nên kế hoạch cũ không còn đúng nữa.
   const [coachRefreshKey, setCoachRefreshKey] = useState(0);
@@ -371,9 +423,16 @@ const handleMenuItemClick = useCallback(async (itemId) => {
     return;
   }
 
+  if (itemId === 'login') {
+    navigate('/login');
+    setShowUserMenu(false);
+    return;
+  }
+
   if (itemId === 'logout') {
     try {
       await logout();
+      setCurrentUser(null);
       navigate('/login');
     } catch (error) {
       toast.error(error.message || 'Logout failed.');
@@ -714,7 +773,7 @@ const handleMenuItemClick = useCallback(async (itemId) => {
             title="Phòng học cá nhân"
             onClick={() => toast.info("🏠 Bạn đang ở trong phòng học cá nhân của mình.")}
           >
-            User's room
+            {currentUser ? `${currentUser.name || currentUser.username}'s room` : "User's room"}
           </button>
 
           <div className="user-menu-wrapper" ref={userMenuRef}>
@@ -725,12 +784,23 @@ const handleMenuItemClick = useCallback(async (itemId) => {
               aria-haspopup="menu"
               aria-label="User menu"
             >
-              MN
+              {currentUser?.image ? (
+                <img
+                  src={currentUser.image}
+                  alt={currentUser.name || 'User avatar'}
+                  className="login-nav-avatar"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              ) : (
+                userInitials
+              )}
             </button>
 
             {showUserMenu && (
               <div className="user-dropdown-menu" role="menu">
-                <UserDropdownHeader onClose={handleCloseUserMenu} />
+                <UserDropdownHeader user={currentUser} onClose={handleCloseUserMenu} />
                 <div className="user-dropdown-divider" />
                 <UserMenuSection
                   items={MENU_ITEMS}
@@ -741,7 +811,7 @@ const handleMenuItemClick = useCallback(async (itemId) => {
                   onItemClick={handleMenuItemClick}
                 />
                 <UserMenuSection
-                  items={FOOTER_ITEMS}
+                  items={footerMenuItems}
                   isLast
                   onItemClick={handleMenuItemClick}
                 />

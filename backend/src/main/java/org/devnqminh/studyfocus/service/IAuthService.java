@@ -8,6 +8,6 @@ import org.devnqminh.studyfocus.dto.response.user.UserProfileResponse;
 public interface IAuthService {
     LoginResponse login(LoginRequest loginRequest);
     void register(RegisterRequest request);
+    LoginResponse loginOrRegisterWithGoogle(String idToken);
     UserProfileResponse getUserProfile(Long userId);
-
 }

@@ -33,8 +33,9 @@
   position: relative;
   z-index: 10;
   width: 100%;
-  max-width: 450px;
-  padding: 0 1.5rem;
+  max-width: 448px;
+  padding: 0 24px;
+  box-sizing: border-box;
 }
 
 /* Header */
@@ -191,9 +192,14 @@
 
 /* Social Buttons */
 .social-buttons {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.social-buttons iframe {
+  border-radius: 0.375rem !important;
 }
 
 .social-button {
