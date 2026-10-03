@@ -173,6 +173,7 @@ public class AuthServiceImpl implements IAuthService {
                                 .duration(time.getDuration())
                                 .breakTime(time.getBreakTime())
                                 .count(time.getCount())
+                                .createdAt(time.getCreatedAt())
                                 .build())
                         .collect(Collectors.toList()))
                 .build();

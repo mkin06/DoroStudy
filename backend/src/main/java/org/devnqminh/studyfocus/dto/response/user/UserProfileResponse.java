@@ -32,5 +32,6 @@ public class UserProfileResponse {
         private Double duration;
         private Double breakTime;
         private Integer count;
+        private Instant createdAt;
     }
 }

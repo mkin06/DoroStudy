@@ -2,6 +2,13 @@ import React, { useState } from 'react';
 import { Image, CloudRain } from 'lucide-react';
 import './BackgroundModal.css';
 
+const getYouTubeId = (url) => {
+  if (!url) return null;
+  if (/^[a-zA-Z0-9_-]{11}$/.test(url)) return url;
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+  return match ? match[1] : null;
+};
+
 const MOTION_PRESETS = [
   {
     id: 'cafe-motion',
@@ -105,11 +112,12 @@ export default function BackgroundModal({ onClose, scene, onChangeScene }) {
     if (!url) return;
     const isYt = /youtu\.be|youtube\.com/.test(url);
     const resolvedType = isYt ? 'video' : customType;
+    const ytId = isYt ? getYouTubeId(url) : null;
     onChangeScene({
       ...scene,
       type: resolvedType,
       url: url,
-      thumbnail: resolvedType === 'image' ? url : '',
+      thumbnail: ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : (resolvedType === 'image' ? url : ''),
       id: 'custom',
     });
   };
