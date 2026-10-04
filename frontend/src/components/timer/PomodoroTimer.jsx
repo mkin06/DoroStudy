@@ -4,13 +4,17 @@ import './PomodoroTimer.css';
 import useTimer from '../../hooks/userTimer';
 import backgroundImage from '../../assets/background.jpg';
 import SettingsModal, { PRESETS } from './SettingsModal';
-import { logout } from '../../api/authentication/auth';
+import { logout, me } from '../../api/authentication/auth';
 import ProfilePage from '../profile/UserProfile';
 import { studySessionAPI } from '../../api/studySession';
 import { useToast } from '../../contexts/ToastContext';
 import NotesPanel from '../notes/NotesPanel';
 import MusicModal from './MusicModal';
 import BackgroundModal from './BackgroundModal';
+import ReflectionModal from '../reflection/ReflectionModal';
+import FocusProfilePanel from '../insights/FocusProfilePanel';
+import NextSessionCard from '../coach/NextSessionCard';
+import NudgeBanner from '../coach/NudgeBanner';
 
 // SVG Icon imports
 import upgradeIcon from '../../assets/user-menu/gift.svg';
@@ -36,11 +40,18 @@ import bellIcon from '../../assets/ground/bell.svg';
 import targetIcon from '../../assets/ground/target.svg';
 import settingClockIcon from '../../assets/user-menu/settingClock.svg';
 
+const getYouTubeId = (url) => {
+  if (!url) return null;
+  if (/^[a-zA-Z0-9_-]{11}$/.test(url)) return url;
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+  return match ? match[1] : null;
+};
 
 // ========== STATIC CONFIGS ==========
 const MENU_ITEMS = [
   { id: 'upgrade', icon: upgradeIcon, text: 'Upgrade to Plus', arrow: true, type: 'svg' },
   { id: 'profile', icon: profileIcon, text: 'Public profile', arrow: true, type: 'svg' },
+  { id: 'focusdna', icon: '🧬', text: 'Focus DNA', arrow: true, type: 'emoji' },
   { id: 'room', icon: roomIcon, text: 'Find study room', arrow: true, type: 'svg' },
   { id: 'settings', icon: settingsIcon, text: 'App settings', arrow: true, type: 'svg' },
   { id: 'friends', icon: friendIcon, text: 'Manage friends', arrow: true, type: 'svg' },
@@ -177,12 +188,21 @@ const FooterButtonsGroup = React.memo(({ buttons, direction, onButtonClick }) =>
 });
 FooterButtonsGroup.displayName = 'FooterButtonsGroup';
 
-const UserDropdownHeader = React.memo(({ onClose }) => {
+const UserDropdownHeader = React.memo(({ user, onClose }) => {
+  const displayName = user ? (user.name || user.username) : 'Guest User';
+  const subtitle = user 
+    ? (user.email || (user.status === 'ACTIVE' ? 'Active Member' : 'Member')) 
+    : 'Guest Account';
+
   return (
     <div className="user-dropdown-header">
-      <div>
-        <div className="user-dropdown-title">MegaScholar905</div>
-        <div className="user-dropdown-subtitle">Guest Account</div>
+      <div style={{ maxWidth: '210px', overflow: 'hidden' }}>
+        <div className="user-dropdown-title" title={displayName} style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+          {displayName}
+        </div>
+        <div className="user-dropdown-subtitle" title={subtitle} style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
+          {subtitle}
+        </div>
       </div>
       <button
         className="user-dropdown-close"
@@ -201,7 +221,22 @@ UserDropdownHeader.displayName = 'UserDropdownHeader';
 export default function PomodoroTimer() {
   const navigate = useNavigate();
   const toast = useToast();
-  const { minutes, seconds, isRunning, toggleTimer, setTime } = useTimer(DEFAULT_PRESET_TIMES[0]);
+  const [timerMode, setTimerMode] = useState('focus'); // 'focus' | 'stopwatch'
+  const [activePreset, setActivePreset] = useState(PRESETS[0]);
+  const [completedPomodoros, setCompletedPomodoros] = useState(0);
+  const [isDeepFocus, setIsDeepFocus] = useState(Boolean(document.fullscreenElement));
+
+  const {
+    hours,
+    minutes,
+    seconds,
+    totalMinutes,
+    totalSeconds,
+    isRunning,
+    toggleTimer,
+    resetTimer,
+    setTime
+  } = useTimer(DEFAULT_PRESET_TIMES[0], timerMode === 'stopwatch');
 
   // States
   const [mode, setMode] = useState('pomodoro');
@@ -215,13 +250,100 @@ export default function PomodoroTimer() {
   const [showMusic, setShowMusic] = useState(false);
   const [musicVideoId, setMusicVideoId] = useState('jfKfPfyJRdk'); // default lofi girl stream
   const [showBackground, setShowBackground] = useState(false);
+  // sessionId của phiên vừa lưu — có giá trị thì hiện popup reflection
+  const [reflectionSessionId, setReflectionSessionId] = useState(null);
+  const [showFocusProfile, setShowFocusProfile] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  // Fetch logged in user profile
+  useEffect(() => {
+    let isMounted = true;
+    me()
+      .then((data) => {
+        if (isMounted && data) {
+          setCurrentUser(data);
+        }
+      })
+      .catch((err) => {
+        console.warn('User not authenticated, running in guest mode:', err);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const userInitials = useMemo(() => {
+    if (!currentUser) return 'G';
+    const nameToUse = currentUser.name || currentUser.username || '';
+    if (!nameToUse) return 'U';
+    const parts = nameToUse.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return nameToUse.slice(0, 2).toUpperCase();
+  }, [currentUser]);
+
+  const footerMenuItems = useMemo(() => {
+    if (!currentUser) {
+      return [
+        { id: 'apps', icon: ourApp, text: 'Our apps', arrow: true, type: 'svg' },
+        { id: 'login', icon: logoutIcon, text: 'Log in / Register', arrow: true, type: 'svg' },
+      ];
+    }
+    return [
+      { id: 'apps', icon: ourApp, text: 'Our apps', arrow: true, type: 'svg' },
+      { id: 'logout', icon: logoutIcon, text: 'Logout', external: true, type: 'svg' },
+    ];
+  }, [currentUser]);
+
+  // Đổi giá trị để buộc thẻ Focus Coach tải lại kế hoạch — sau mỗi phiên, dữ liệu mới đã
+  // vào hồ sơ nên kế hoạch cũ không còn đúng nữa.
+  const [coachRefreshKey, setCoachRefreshKey] = useState(0);
+  // Chốt chặn lưu trùng: effect auto-save chạy lại mỗi khi render trong lúc timer ở 00:00
+  // (đổi task, StrictMode double-invoke...) nên phải nhớ đã lưu phiên nào chưa.
+  const savingSessionRef = useRef(false);
+  // Thời điểm user bấm Start — gửi lên backend để Meta-Learning biết đúng khung giờ học
+  const sessionStartedAtRef = useRef(null);
+
   const [scene, setScene] = useState({
     type: 'image',
     url: backgroundImage,
+    thumbnail: backgroundImage,
     id: 'default',
     opacity: 0.3,
     weather: 'clear',
   });
+  const [videoError, setVideoError] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
+
+  useEffect(() => {
+    setVideoError(false);
+    setVideoLoaded(false);
+  }, [scene.url]);
+
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsDeepFocus(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => document.removeEventListener('fullscreenchange', handleFsChange);
+  }, []);
+
+  const handleToggleDeepFocus = useCallback(() => {
+    if (!document.fullscreenElement) {
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+      setIsDeepFocus(true);
+      toast.success('⚡ Deep Focus: Đã bật toàn màn hình');
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      }
+      setIsDeepFocus(false);
+      toast.info('Đã thoát Deep Focus');
+    }
+  }, [toast]);
 
   // Refs
   const userMenuRef = useRef(null);
@@ -260,7 +382,10 @@ export default function PomodoroTimer() {
       const pipDoc = pipWindowRef.current.document;
       const timerElement = pipDoc.getElementById('pip-timer');
       if (timerElement) {
-        timerElement.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        const displayTime = (timerMode === 'stopwatch' && hours > 0)
+          ? `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+          : `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        timerElement.textContent = displayTime;
       }
       const playPauseBtn = pipDoc.getElementById('pip-play-pause');
       if (playPauseBtn) {
@@ -272,31 +397,34 @@ export default function PomodoroTimer() {
         });
       }
     }
-  }, [minutes, seconds, isRunning, toggleTimer]);
+  }, [hours, minutes, seconds, isRunning, timerMode, toggleTimer]);
 
-   // ========== AUTO SAVE SESSION WHEN TIMER COMPLETES ==========
+  // Người dùng bấm vào thông báo đẩy: service worker mở app kèm kế hoạch trên URL.
+  // Áp luôn rồi dọn URL — để lại query string thì F5 một cái là timer bị đặt lại lần nữa.
   useEffect(() => {
-    // Khi timer về 00:00 (minutes === 0 && seconds === 0) và không chạy
-    if (minutes === 0 && seconds === 0 && !isRunning && currentPreset === 0) {
-      // Chỉ lưu khi là phiên Pomodoro (currentPreset === 0)
-      const saveSession = async () => {
-        try {
-          await studySessionAPI.createSession({
-            duration: presetTimes[0],
-            breakTime: presetTimes[1],
-            count: 1,
-            mode
-          });
-          toast.success('Session saved!');
-          handleSkipToBreak();
-        } catch (error) {
-          toast.error(error.message || 'Failed to save session.');
-        }
-      };
-      
-      saveSession();
+    const params = new URLSearchParams(window.location.search);
+    const minutes = Number(params.get('nudgeMinutes'));
+    const subject = params.get('nudgeSubject');
+    if (!minutes && !subject) return;
+
+    if (minutes > 0) {
+      setPresetTimes((prev) => [minutes, prev[1], prev[2]]);
+      setTime?.(minutes);
+      setCurrentPreset(0);
     }
-  }, [minutes, seconds, isRunning, currentPreset, presetTimes, mode]);
+    if (subject) {
+      setTask(subject);
+    }
+    window.history.replaceState({}, '', window.location.pathname);
+  }, [setTime]);
+
+  // Ghi lại thời điểm bắt đầu phiên Pomodoro để gửi kèm khi lưu
+  useEffect(() => {
+    if (isRunning && currentPreset === 0 && sessionStartedAtRef.current === null) {
+      sessionStartedAtRef.current = new Date().toISOString();
+    }
+  }, [isRunning, currentPreset]);
+
 
 
   // ========== HANDLERS ==========
@@ -319,9 +447,22 @@ const handleMenuItemClick = useCallback(async (itemId) => {
     return;
   }
 
+  if (itemId === 'focusdna') {
+    setShowFocusProfile(true);
+    setShowUserMenu(false);
+    return;
+  }
+
+  if (itemId === 'login') {
+    navigate('/login');
+    setShowUserMenu(false);
+    return;
+  }
+
   if (itemId === 'logout') {
     try {
       await logout();
+      setCurrentUser(null);
       navigate('/login');
     } catch (error) {
       toast.error(error.message || 'Logout failed.');
@@ -335,23 +476,73 @@ const handleMenuItemClick = useCallback(async (itemId) => {
 }, [navigate]);
 
 
-  const handleSkipToBreak = useCallback(() => {
-    const nextPreset = (currentPreset + 1) % PRESET_NAMES.length;
-    setCurrentPreset(nextPreset);
-    const newTime = presetTimes[nextPreset];
-    if (setTime) {
-      setTime(newTime);
+  const handleTimerModeChange = useCallback((newMode) => {
+    if (newMode === timerMode) return;
+    setTimerMode(newMode);
+    if (newMode === 'focus') {
+      setCurrentPreset(0);
+      if (setTime) {
+        setTime(presetTimes[0]);
+      }
+      toast.info('Switched to Focus Timer (Countdown)');
+    } else {
+      toast.info('Switched to Stopwatch mode');
     }
-    console.log('Skipped to:', PRESET_NAMES[nextPreset], `(${newTime} minutes)`);
-  }, [currentPreset, presetTimes, setTime]);
+  }, [timerMode, presetTimes, setTime, toast]);
 
-  const handleSkipBreakToPomodoro = useCallback(() => {
-    setCurrentPreset(0);
-    if (setTime) {
-      setTime(presetTimes[0]);
+  const handleSaveStopwatchSession = useCallback(async () => {
+    if (totalSeconds < 60) {
+      toast.info('Stopwatch session must be at least 1 minute to save.');
+      return;
     }
-    console.log('Break skipped: back to Pomodoro');
-  }, [presetTimes, setTime]);
+    const durationMin = Math.max(1, Math.round(totalSeconds / 60));
+    try {
+      const saved = await studySessionAPI.createSession({
+        duration: durationMin,
+        breakTime: 0,
+        count: 1,
+        mode: 'stopwatch',
+        subject: task || null,
+        startTime: sessionStartedAtRef.current || new Date().toISOString(),
+      });
+      toast.success(`Saved stopwatch session (${durationMin}m)!`);
+      resetTimer();
+      setReflectionSessionId(saved.id);
+      setCoachRefreshKey((k) => k + 1);
+    } catch (error) {
+      toast.error(error.message || 'Failed to save study session.');
+    } finally {
+      sessionStartedAtRef.current = null;
+    }
+  }, [totalSeconds, task, resetTimer, toast]);
+
+  // Bỏ qua phiên hiện tại (Fix lỗi 1: Skip thông minh theo chu kỳ Pomodoro)
+  const handleSkip = useCallback(() => {
+    if (timerMode === 'stopwatch') {
+      resetTimer();
+      toast.info('Đã đặt lại đồng hồ bấm giờ về 00:00');
+      return;
+    }
+
+    if (currentPreset === 0) {
+      // Đang học -> Chuyển sang nghỉ (sau 4 phiên học = 1 phiên nghỉ dài)
+      const nextCount = completedPomodoros + 1;
+      const isLongBreak = (nextCount % 4 === 0);
+      const targetPreset = isLongBreak ? 2 : 1;
+      setCurrentPreset(targetPreset);
+      if (setTime) {
+        setTime(presetTimes[targetPreset]);
+      }
+      toast.info(`Bỏ qua phiên học ➔ Chuyển sang ${PRESET_NAMES[targetPreset]}`);
+    } else {
+      // Đang nghỉ -> Chuyển về học Pomodoro
+      setCurrentPreset(0);
+      if (setTime) {
+        setTime(presetTimes[0]);
+      }
+      toast.info('Bỏ qua phiên nghỉ ➔ Quay lại Pomodoro');
+    }
+  }, [timerMode, currentPreset, completedPomodoros, presetTimes, setTime, resetTimer, toast]);
 
   // HÀM XỬ LÝ THAY ĐỔI PRESET TỪ DOTS (click vào chấm tròn)
   const handlePresetDotChange = useCallback((index) => {
@@ -363,7 +554,7 @@ const handleMenuItemClick = useCallback(async (itemId) => {
     console.log('Preset dot changed to:', PRESET_NAMES[index], `(${newTime} minutes)`);
   }, [presetTimes, setTime]);
 
-  // ⭐ HÀM XỬ LÝ THAY ĐỔI PRESET TỪ MODAL SETTINGS
+  // ⭐ HÀM XỬ LÝ THAY ĐỔI PRESET TỪ MODAL SETTINGS (Fix lỗi 2: Lưu và hiển thị đúng preset đã chọn)
   const handleSettingsPresetChange = useCallback((presetConfig) => {
     console.log('Settings preset changed to:', presetConfig.presetName);
 
@@ -374,14 +565,45 @@ const handleMenuItemClick = useCallback(async (itemId) => {
     ];
     setPresetTimes(nextPresetTimes);
 
-    // Cập nhật thời gian từ modal settings
-    if (setTime) {
+    const chosenPreset = presetConfig.preset || PRESETS.find(p => p.id === presetConfig.id || p.name === presetConfig.presetName) || {
+      id: presetConfig.id || 'custom',
+      name: presetConfig.presetName,
+      focus: presetConfig.focusTime,
+      short: presetConfig.shortBreak,
+      long: presetConfig.longBreak,
+    };
+    setActivePreset(chosenPreset);
+
+    // Cập nhật thời gian từ modal settings nếu đang ở focus mode
+    if (setTime && timerMode === 'focus') {
       setTime(nextPresetTimes[currentPreset]);
     }
 
     // Đóng modal
     setShowSettings(false);
-  }, [currentPreset, setTime]);
+  }, [currentPreset, timerMode, setTime]);
+
+  /**
+   * Áp kế hoạch của Focus Coach vào timer: đặt luôn độ dài phiên, độ dài nghỉ và môn học.
+   *
+   * Đây là chỗ vòng lặp khép lại — kết luận AI rút ra từ các phiên trước biến thành thiết
+   * lập thật của phiên sắp tới, chỉ bằng một cú bấm. Bắt user tự vào Settings gõ lại con số
+   * thì phần lớn sẽ không làm, và mọi phân tích phía trước thành vô nghĩa.
+   */
+  const handleApplyCoachPlan = useCallback(({ durationMinutes, breakMinutes, subject }) => {
+    setPresetTimes((prev) => {
+      const next = [durationMinutes, breakMinutes ?? prev[1], prev[2]];
+      // setTime nằm trong updater để luôn dùng đúng bộ preset vừa tính, không phải bộ cũ
+      if (setTime && currentPreset === 0) {
+        setTime(next[0]);
+      }
+      return next;
+    });
+    if (subject) {
+      setTask(subject);
+    }
+    toast.success(`Đã đặt phiên ${durationMinutes} phút${subject ? ` · ${subject}` : ''}`);
+  }, [currentPreset, setTime, toast]);
 
   const handleTogglePiP = useCallback(async () => {
     if (!('documentPictureInPicture' in window)) {
@@ -459,7 +681,7 @@ const handleMenuItemClick = useCallback(async (itemId) => {
       const skipBtn = pipWindow.document.getElementById('pip-skip');
 
       playPauseBtn.addEventListener('click', toggleTimer);
-      skipBtn.addEventListener('click', handleSkipToBreak);
+      skipBtn.addEventListener('click', handleSkip);
 
       pipWindow.addEventListener('pagehide', () => {
         pipWindowRef.current = null;
@@ -469,7 +691,82 @@ const handleMenuItemClick = useCallback(async (itemId) => {
     } catch (error) {
       toast.error('Cannot open Picture-in-Picture: ' + error.message);
     }
-  }, [minutes, seconds, isRunning, toggleTimer, handleSkipToBreak]);
+  }, [minutes, seconds, isRunning, toggleTimer, handleSkip]);
+
+   // ========== AUTO SAVE SESSION WHEN TIMER COMPLETES ==========
+  useEffect(() => {
+    if (timerMode !== 'focus') return;
+
+    // Khi timer về 00:00 (minutes === 0 && seconds === 0) và không chạy
+    if (minutes === 0 && seconds === 0 && !isRunning && currentPreset === 0) {
+      if (savingSessionRef.current) return;
+      savingSessionRef.current = true;
+
+      const saveSession = async () => {
+        try {
+          const saved = await studySessionAPI.createSession({
+            duration: presetTimes[0],
+            breakTime: presetTimes[1],
+            count: 1,
+            mode,
+            subject: task || null,
+            startTime: sessionStartedAtRef.current
+          });
+          toast.success('Session saved!');
+
+          // Chuyển sang phiên nghỉ: chuẩn Pomodoro là sau 4 phiên học sẽ có 1 phiên nghỉ dài
+          const nextCount = completedPomodoros + 1;
+          setCompletedPomodoros(nextCount);
+          const isLongBreak = (nextCount % 4 === 0);
+          const targetPreset = isLongBreak ? 2 : 1;
+          setCurrentPreset(targetPreset);
+          if (setTime) {
+            setTime(presetTimes[targetPreset]);
+          }
+
+          if (isLongBreak) {
+            toast.success(`🎉 Xuất sắc! Đã hoàn thành 4 phiên Pomodoro. Hãy nghỉ ngơi dài ${presetTimes[2]} phút nhé!`);
+          } else {
+            toast.success(`☕ Hoàn thành phiên học! Nghỉ ngơi ${presetTimes[1]} phút nào.`);
+          }
+
+          // Mở popup reflection (user trả lời trong lúc nghỉ, có thể skip)
+          setReflectionSessionId(saved.id);
+          // Phiên vừa xong đã là dữ liệu mới: buộc coach dựng lại kế hoạch cho lần sau
+          setCoachRefreshKey((k) => k + 1);
+
+        } catch (error) {
+          toast.error(error.message || 'Failed to save session.');
+          savingSessionRef.current = false;
+        } finally {
+          sessionStartedAtRef.current = null;
+        }
+      };
+      
+      saveSession();
+    } else if (!(minutes === 0 && seconds === 0)) {
+      // Timer đã rời mốc 00:00 → phiên kế tiếp được phép lưu
+      savingSessionRef.current = false;
+    }
+  }, [minutes, seconds, isRunning, currentPreset, presetTimes, mode, task, completedPomodoros, timerMode, setTime, toast]);
+
+  // Khi phiên nghỉ kết thúc (Short Break hoặc Long Break về 00:00)
+  const breakFinishedRef = useRef(false);
+  useEffect(() => {
+    if (timerMode !== 'focus') return;
+
+    if (minutes === 0 && seconds === 0 && !isRunning && currentPreset !== 0) {
+      if (breakFinishedRef.current) return;
+      breakFinishedRef.current = true;
+      toast.success('⏰ Hết giờ nghỉ ngơi rồi! Sẵn sàng cho phiên tập trung tiếp theo.');
+      setCurrentPreset(0);
+      if (setTime) {
+        setTime(presetTimes[0]);
+      }
+    } else if (!(minutes === 0 && seconds === 0)) {
+      breakFinishedRef.current = false;
+    }
+  }, [minutes, seconds, isRunning, currentPreset, presetTimes, timerMode, setTime, toast]);
 
   const handleTaskChange = useCallback((e) => {
     setTask(e.target.value);
@@ -488,23 +785,54 @@ const handleMenuItemClick = useCallback(async (itemId) => {
   // ========== RENDER ==========
   return (
     <div className="timer-container">
-      {scene.type === 'video' ? (
-        <video
-          key={scene.url}
-          className="timer-background-video"
-          src={scene.url}
-          autoPlay
-          loop
-          muted
-          playsInline
-          role="presentation"
-        />
-      ) : (
-        <div
-          className="timer-background"
-          style={{ backgroundImage: `url(${scene.url})` }}
-          role="presentation"
-        />
+      {/* Underlying thumbnail image layer (ensures zero-flash background) */}
+      <div
+        className="timer-background"
+        style={{ backgroundImage: `url(${scene.thumbnail || (scene.type !== 'video' ? scene.url : '') || backgroundImage})` }}
+        role="presentation"
+      />
+
+      {/* Motion / Video background */}
+      {scene.type === 'video' && !videoError && (
+        (() => {
+          const ytId = getYouTubeId(scene.url);
+          if (ytId) {
+            return (
+              <iframe
+                key={ytId}
+                className={`timer-background-iframe ${videoLoaded ? 'loaded' : 'loading'}`}
+                src={`https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${ytId}&playsinline=1&rel=0&showinfo=0&iv_load_policy=3&disablekb=1&modestbranding=1&fs=0`}
+                title="Focus Scene Background"
+                frameBorder="0"
+                tabIndex="-1"
+                aria-hidden="true"
+                allow="autoplay; encrypted-media"
+                allowFullScreen
+                onLoad={() => {
+                  setTimeout(() => {
+                    setVideoLoaded(true);
+                  }, 1200);
+                }}
+                onError={() => setVideoError(true)}
+              />
+            );
+          }
+          return (
+            <video
+              key={scene.url}
+              className={`timer-background-video ${videoLoaded ? 'loaded' : 'loading'}`}
+              src={scene.url}
+              poster={scene.thumbnail}
+              autoPlay
+              loop
+              muted
+              playsInline
+              onLoadedData={() => setVideoLoaded(true)}
+              onError={() => setVideoError(true)}
+              role="presentation"
+            />
+          );
+        })()
       )}
 
       {/* Weather Particle Overlays */}
@@ -524,29 +852,59 @@ const handleMenuItemClick = useCallback(async (itemId) => {
             <img src={targetIcon} alt="" className="logo-icon-svg" width="28" height="28" />
           </span>
           <span className="logo-text">DoroStudy</span>
-          <button className="deep-focus-btn" aria-label="Enter deep focus mode">
+          <button
+            className="deep-focus-btn"
+            onClick={handleToggleDeepFocus}
+            aria-label="Enter deep focus mode"
+            title="Bật/Tắt chế độ tập trung toàn màn hình"
+          >
             <img src={focusLightning} alt="" className="deep-focus-icon" width="16" height="16" />
             Deep Focus
           </button>
         </div>
 
         <div className="header-right">
-          <button className="stat-btn" aria-label="Streak: 1">
+          <button
+            className="stat-btn"
+            aria-label="Streak: 1"
+            title="Chuỗi ngày học tập liên tục (Streak)"
+            onClick={() => toast.info('🔥 Chuỗi học tập: 1 ngày liên tục. Cố lên nhé!')}
+          >
             <img src={fireIcon} alt="" className="header-stat-icon" width="18" height="18" />
             <span>1</span>
           </button>
-          <button className="stat-btn" aria-label="Study time: 0 minutes">
+          <button
+            className="stat-btn"
+            aria-label="Study time: 0 minutes"
+            title="Tổng thời gian tập trung hôm nay"
+            onClick={() => toast.info('⏱️ Tổng thời gian học hôm nay: Hoàn thành phiên để tích lũy!')}
+          >
             <img src={stopwatchIcon} alt="" className="header-stat-icon" width="18" height="18" />
             <span>0m</span>
           </button>
-          <button className="stat-btn" aria-label="Statistics">
+          <button
+            className="stat-btn"
+            aria-label="Statistics"
+            title="Xem hồ sơ tập trung & thống kê (Focus Insights)"
+            onClick={() => setShowFocusProfile(true)}
+          >
             <img src={chartIcon} alt="" className="header-stat-icon" width="18" height="18" />
           </button>
-          <button className="stat-btn" aria-label="Notifications">
+          <button
+            className="stat-btn"
+            aria-label="Notifications"
+            title="Thông báo"
+            onClick={() => toast.info('🔔 Không có thông báo mới. Chúc bạn một phiên học hiệu quả!')}
+          >
             <img src={bellIcon} alt="" className="header-stat-icon" width="18" height="18" />
           </button>
-          <button className="user-menu" aria-label="Enter user's study room">
-            User's room
+          <button
+            className="user-menu"
+            aria-label="Enter user's study room"
+            title="Phòng học cá nhân"
+            onClick={() => toast.info("🏠 Bạn đang ở trong phòng học cá nhân của mình.")}
+          >
+            {currentUser ? `${currentUser.name || currentUser.username}'s room` : "User's room"}
           </button>
 
           <div className="user-menu-wrapper" ref={userMenuRef}>
@@ -557,12 +915,23 @@ const handleMenuItemClick = useCallback(async (itemId) => {
               aria-haspopup="menu"
               aria-label="User menu"
             >
-              MN
+              {currentUser?.image ? (
+                <img
+                  src={currentUser.image}
+                  alt={currentUser.name || 'User avatar'}
+                  className="login-nav-avatar"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              ) : (
+                userInitials
+              )}
             </button>
 
             {showUserMenu && (
               <div className="user-dropdown-menu" role="menu">
-                <UserDropdownHeader onClose={handleCloseUserMenu} />
+                <UserDropdownHeader user={currentUser} onClose={handleCloseUserMenu} />
                 <div className="user-dropdown-divider" />
                 <UserMenuSection
                   items={MENU_ITEMS}
@@ -573,7 +942,7 @@ const handleMenuItemClick = useCallback(async (itemId) => {
                   onItemClick={handleMenuItemClick}
                 />
                 <UserMenuSection
-                  items={FOOTER_ITEMS}
+                  items={footerMenuItems}
                   isLast
                   onItemClick={handleMenuItemClick}
                 />
@@ -584,15 +953,28 @@ const handleMenuItemClick = useCallback(async (itemId) => {
       </header>
 
       <div className="timer-content">
-        {/* SỬA: Truyền handlePresetDotChange thay vì handlePresetChange */}
-        <PresetDots
-          currentPreset={currentPreset}
-          onPresetChange={handlePresetDotChange}
-        />
+        {timerMode === 'focus' ? (
+          <div className="pomodoro-header-section">
+            <PresetDots
+              currentPreset={currentPreset}
+              onPresetChange={handlePresetDotChange}
+            />
+            <div className="cycle-pill" title="Pomodoro Cycle: 4 study sessions followed by a long break">
+              {currentPreset === 0 ? `Session ${(completedPomodoros % 4) + 1}/4` : PRESET_NAMES[currentPreset]}
+            </div>
+          </div>
+        ) : (
+          <div className="stopwatch-badge-header">
+            <span className="stopwatch-live-dot" />
+            <span>STOPWATCH MODE</span>
+          </div>
+        )}
 
         <div className="timer-display">
           <h1 className="time">
-            {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+            {timerMode === 'stopwatch' && hours > 0
+              ? `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+              : `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`}
           </h1>
         </div>
 
@@ -608,11 +990,26 @@ const handleMenuItemClick = useCallback(async (itemId) => {
           />
         </div>
 
+        {/* Nhắc chủ động: chỉ hiện khi thật sự có chuyện (chuỗi sắp đứt, đang tụt nhịp...) */}
+        <NudgeBanner onAct={handleApplyCoachPlan} refreshKey={coachRefreshKey} />
+
+        {/* AI trước phiên học: gợi ý môn/độ dài/khung giờ và dự đoán điểm.
+            Ẩn khi đang chạy hoặc đang nghỉ — lúc đó user cần đồng hồ, không cần lời khuyên. */}
+        {timerMode === 'focus' && (
+          <NextSessionCard
+            subject={task}
+            disabled={isRunning || currentPreset !== 0}
+            onApply={handleApplyCoachPlan}
+            refreshKey={coachRefreshKey}
+          />
+        )}
+
         <div className="control-section">
           <button
             className="settings-icon-btn"
             onClick={handleOpenSettings}
             aria-label="Open settings"
+            title="Preset Settings & Timer Mode"
           >
             <img
               src={settingClockIcon}
@@ -623,17 +1020,40 @@ const handleMenuItemClick = useCallback(async (itemId) => {
             />
           </button>
 
+          {/* SỬA LỖI 1: Nút chính luôn là Start/Pause để bắt đầu cả phiên học lẫn phiên nghỉ */}
           <button
-            onClick={isBreakMode ? handleSkipBreakToPomodoro : toggleTimer}
+            onClick={toggleTimer}
             className="start-btn-large"
-            aria-label={
-              isBreakMode
-                ? 'Skip break and return to pomodoro'
-                : (isRunning ? 'Pause timer' : 'Start timer')
-            }
+            aria-label={isRunning ? 'Pause timer' : 'Start timer'}
           >
-            {isBreakMode ? 'Skip' : (isRunning ? 'Pause' : 'Start')}
+            {isRunning ? 'Pause' : 'Start'}
           </button>
+
+          {/* Nút Reset cho Stopwatch */}
+          {timerMode === 'stopwatch' && (
+            <button
+              className="reset-btn"
+              onClick={resetTimer}
+              title="Reset to 00:00"
+              aria-label="Reset stopwatch"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
+              </svg>
+            </button>
+          )}
+
+          {/* Nút Lưu phiên cho Stopwatch khi đã học được trên 1 phút */}
+          {timerMode === 'stopwatch' && totalSeconds >= 60 && !isRunning && (
+            <button
+              className="save-stopwatch-btn"
+              onClick={handleSaveStopwatchSession}
+              title="Save session to profile"
+            >
+              Save session ({Math.max(1, Math.round(totalSeconds / 60))}m)
+            </button>
+          )}
 
           <button
             className="pip-btn-main"
@@ -647,17 +1067,19 @@ const handleMenuItemClick = useCallback(async (itemId) => {
             </svg>
           </button>
 
-          <button
-            className="skip-btn"
-            onClick={handleSkipToBreak}
-            aria-label="Skip to next preset"
-            title="Skip to break"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polygon points="5 4 15 12 5 20 5 4" />
-              <line x1="19" y1="5" x2="19" y2="19" />
-            </svg>
-          </button>
+          {timerMode === 'focus' && (
+            <button
+              className="skip-btn"
+              onClick={handleSkip}
+              aria-label="Skip to next stage"
+              title={currentPreset === 0 ? "Bỏ qua phiên học ➔ Sang nghỉ" : "Bỏ qua nghỉ ➔ Quay lại Pomodoro"}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polygon points="5 4 15 12 5 20 5 4" />
+                <line x1="19" y1="5" x2="19" y2="19" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 
@@ -668,17 +1090,32 @@ const handleMenuItemClick = useCallback(async (itemId) => {
           onButtonClick={(id) => {
             if (id === 'notes') setShowNotes(true);
             if (id === 'music') setShowMusic(prev => !prev);
-            if (id === 'background') setShowBackground(true);
+            if (id === 'background' || id === 'cloud') setShowBackground(true);
           }}
         />
-        <FooterButtonsGroup buttons={FOOTER_BUTTONS_RIGHT} direction="right" />
+        <FooterButtonsGroup
+          buttons={FOOTER_BUTTONS_RIGHT}
+          direction="right"
+          onButtonClick={(id) => {
+            if (id === 'user') setShowProfile(true);
+            if (id === 'chat') toast.info('💬 Room Chat: Bạn đang ở chế độ phòng học cá nhân.');
+            if (id === 'deepfocus') handleToggleDeepFocus();
+            if (id === 'clock') setShowFocusProfile(true);
+          }}
+        />
       </footer>
 
-      {/* SỬA: Truyền handleSettingsPresetChange */}
+      {/* SỬA LỖI 2 & 3: Truyền preset hiện tại và mode để modal đồng bộ chuẩn */}
       {showSettings && (
         <SettingsModal
           onClose={handleCloseSettings}
           onPresetChange={handleSettingsPresetChange}
+          currentPresetObj={activePreset}
+          currentPresetTimes={presetTimes}
+          timerMode={timerMode}
+          onTimerModeChange={handleTimerModeChange}
+          deepFocus={isDeepFocus}
+          onToggleDeepFocus={handleToggleDeepFocus}
         />
       )}
       {showProfile && (
@@ -699,6 +1136,18 @@ const handleMenuItemClick = useCallback(async (itemId) => {
           scene={scene}
           onChangeScene={setScene}
         />
+      )}
+      {showFocusProfile && (
+        <FocusProfilePanel onClose={() => setShowFocusProfile(false)} />
+      )}
+      {reflectionSessionId && (
+              <ReflectionModal
+                sessionId={reflectionSessionId}
+                subject={task || null}
+                onAdoptSubject={(detected) => setTask(detected)}
+                onApplyPlan={handleApplyCoachPlan}
+                onClose={() => setReflectionSessionId(null)}
+              />
       )}
     </div>
   );

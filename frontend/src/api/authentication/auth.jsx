@@ -18,6 +18,17 @@ export async function login(data) {
   return res.json();
 }
 
+export async function googleLogin(idToken) {
+  const res = await fetch('/api/auth/google', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ idToken }),
+  });
+  if (!res.ok) throw new Error(await parseError(res, 'Google authentication failed.'));
+  return res.json();
+}
+
 export async function logout() {
   const res = await fetch('/api/auth/logout', {
     method: 'POST',

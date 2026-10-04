@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { Pencil, Link2, Check, X, Gift } from 'lucide-react';
+import { useToast } from '../../contexts/ToastContext';
 import { me } from '../../api/authentication/auth';
 import './UserProfile.css';
 import { studySessionAPI } from '../../api/studySession';
 
 export default function ProfilePage({ onClose }) {
+  const toast = useToast();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState(null);
   const [editing, setEditing] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     location: '',
@@ -92,10 +96,35 @@ export default function ProfilePage({ onClose }) {
       // TODO: Implement update profile API
       console.log('Saving profile:', formData);
       setEditing(false);
-      alert('Profile updated successfully');
+      if (toast?.success) {
+        toast.success('Profile updated successfully');
+      } else {
+        alert('Profile updated successfully');
+      }
     } catch (error) {
       console.error('Failed to update profile:', error);
-      alert('Failed to update profile');
+      if (toast?.error) {
+        toast.error('Failed to update profile');
+      } else {
+        alert('Failed to update profile');
+      }
+    }
+  };
+
+  const handleCopyLink = () => {
+    const url = window.location.href;
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(url).then(() => {
+        setCopied(true);
+        if (toast?.success) {
+          toast.success('Profile link copied to clipboard!');
+        }
+        setTimeout(() => setCopied(false), 2000);
+      }).catch(() => {
+        if (toast?.error) {
+          toast.error('Failed to copy link');
+        }
+      });
     }
   };
 
@@ -186,15 +215,16 @@ export default function ProfilePage({ onClose }) {
     return days;
   };
 
-  // Build map of study counts by date (mocked on the frontend to showcase the heatmap calendar)
+  // Build map of study counts by date from real user study sessions
   const studyMap = {};
-  const now = new Date();
-  const seed = (user.username || 'user').charCodeAt(0);
-  for (let i = 0; i < 35; i++) {
-    const daysAgo = Math.floor(((seed * i + 13) % 180));
-    const mockDate = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
-    const dateStr = `${mockDate.getFullYear()}-${String(mockDate.getMonth() + 1).padStart(2, '0')}-${String(mockDate.getDate()).padStart(2, '0')}`;
-    studyMap[dateStr] = ((seed * i + 7) % 5) + 1; // 1 to 5 sessions completed
+  if (user?.times && Array.isArray(user.times)) {
+    user.times.forEach(t => {
+      if (t.createdAt) {
+        const d = new Date(t.createdAt);
+        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        studyMap[dateStr] = (studyMap[dateStr] || 0) + (t.count || 1);
+      }
+    });
   }
 
   return (
@@ -205,14 +235,35 @@ export default function ProfilePage({ onClose }) {
           <h2>{user.name || user.username}'s profile</h2>
           <div className="profile-modal-actions">
             {!editing && (
-              <button className="btn-edit-modal" onClick={() => setEditing(true)}>
-                ✏️ Edit
+              <button 
+                type="button" 
+                className="btn-edit-modal" 
+                onClick={() => setEditing(true)}
+              >
+                <Pencil size={14} className="btn-action-icon" />
+                <span>Edit</span>
               </button>
             )}
-            <button className="btn-copy-link">
-              🔗 Copy link
+            <button 
+              type="button" 
+              className="btn-copy-link"
+              onClick={handleCopyLink}
+            >
+              {copied ? (
+                <Check size={14} className="btn-action-icon" />
+              ) : (
+                <Link2 size={14} className="btn-action-icon" />
+              )}
+              <span>{copied ? 'Copied!' : 'Copy link'}</span>
             </button>
-            <button className="btn-close" onClick={onClose}>✕</button>
+            <button 
+              type="button" 
+              className="btn-close" 
+              onClick={onClose}
+              aria-label="Close"
+            >
+              <X size={18} />
+            </button>
           </div>
         </div>
 
@@ -409,8 +460,11 @@ export default function ProfilePage({ onClose }) {
         {!editing && (
           <div className="profile-gifts-section">
             <div className="gifts-header">
-              <h3 className="gifts-title">🎁 Gifts Received</h3>
-              <button className="btn-gifts-total">Total: 0</button>
+              <h3 className="gifts-title">
+                <Gift size={18} className="section-title-icon gifts-title-icon" />
+                <span>Gifts Received</span>
+              </h3>
+              <button type="button" className="btn-gifts-total">Total: 0</button>
             </div>
           </div>
         )}

@@ -1,0 +1,144 @@
+/* ==========================================================================
+   Banner nhắc chủ động.
+
+   Đậm hơn thẻ Focus Coach một nấc, vì nó chỉ xuất hiện khi thật sự có chuyện —
+   nhưng vẫn nằm dưới đồng hồ về mặt thứ bậc thị giác: đây là lời nhắc, không
+   phải nội dung chính của màn hình.
+   ========================================================================== */
+
+.nudge-banner {
+    width: 100%;
+    max-width: 520px;
+    margin: 0 auto 10px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: #fff;
+    animation: nudgeSlideIn 0.4s ease-out;
+}
+
+@keyframes nudgeSlideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Càng khẩn cấp viền càng nóng */
+.nudge-banner.hot  { border-left: 3px solid #ef4444; }
+.nudge-banner.warm { border-left: 3px solid #fb923c; }
+.nudge-banner.cool { border-left: 3px solid #60a5fa; }
+
+.nudge-icon {
+    font-size: 22px;
+    line-height: 1.2;
+    flex-shrink: 0;
+}
+
+.nudge-text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.nudge-title {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.nudge-body {
+    margin: 0;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.nudge-push-link {
+    align-self: flex-start;
+    margin-top: 4px;
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 11.5px;
+    color: #93c5fd;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.nudge-push-link:hover:not(:disabled) {
+    color: #bfdbfe;
+}
+
+.nudge-push-link.subscribed {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.nudge-push-link:disabled {
+    cursor: default;
+    opacity: 0.6;
+}
+
+.nudge-push-error {
+    font-size: 11px;
+    color: #fca5a5;
+    margin-top: 2px;
+}
+
+.nudge-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.nudge-act {
+    background: #e2574c;
+    border: none;
+    border-radius: 9px;
+    color: #fff;
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 8px 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s;
+}
+
+.nudge-act:hover {
+    background: #f0655a;
+}
+
+.nudge-dismiss {
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    border-radius: 7px;
+    color: rgba(255, 255, 255, 0.55);
+    width: 26px;
+    height: 26px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.nudge-dismiss:hover {
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+}
+
+@media (max-width: 600px) {
+    .nudge-banner {
+        max-width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .nudge-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
