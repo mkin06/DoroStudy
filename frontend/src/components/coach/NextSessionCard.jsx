@@ -124,7 +124,7 @@ export default function NextSessionCard({ subject, disabled, onApply, refreshKey
         <div className="coach-body">
           <p className={`coach-timing ${verdict.className}`}>
             <Clock3 size={17} aria-hidden="true" />
-            <span><strong>{t(verdict.label)}</strong>{t(plan.timingMessage)}</span>
+            <span><strong>{t(verdict.label)}</strong>{' '}{t(plan.timingMessage)}</span>
           </p>
 
           {plan.guardrail && (
@@ -159,7 +159,7 @@ export default function NextSessionCard({ subject, disabled, onApply, refreshKey
             >
               {applied
                 ? <><Check size={16} aria-hidden="true" />{t("Đã đặt")}</>
-                : <>{t("Đặt")}{plan.durationMinutes}{t("phút")}{plan.subject ? `· ${plan.subject}` : ''}<ArrowRight size={16} aria-hidden="true" /></>}
+                : <><span>{t("Đặt")} {t("{0} phút", [plan.durationMinutes])}{plan.subject ? ` · ${plan.subject}` : ''}</span><ArrowRight size={16} aria-hidden="true" /></>}
             </button>
           </div>
         </div>

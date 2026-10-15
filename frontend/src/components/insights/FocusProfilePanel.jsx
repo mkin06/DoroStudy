@@ -37,7 +37,7 @@ function inkFor(score) {
 }
 
 export default function FocusProfilePanel({ onClose }) {
-  useLanguage();
+  const { language } = useLanguage();
   const [profile, setProfile] = useState(null);
   const [reflections, setReflections] = useState([]);
   const [openReflection, setOpenReflection] = useState(null);
@@ -111,10 +111,10 @@ export default function FocusProfilePanel({ onClose }) {
                   </div>
                   <div className="fp-hero-meta">
                     <span className="fp-hero-label">
-                      {scoreBand(profile.averageFocusScore).emoji}{' '}{t("Trung bình:")}{scoreBand(profile.averageFocusScore).label}
+                      {scoreBand(profile.averageFocusScore).emoji}{' '}{t("Trung bình:")}{' '}{t(scoreBand(profile.averageFocusScore).label)}
                     </span>
                     <span className="fp-hero-sub">
-                      {profile.totalSessions}{t("phiên · cao nhất")}{Math.round(profile.bestFocusScore ?? 0)}
+                      {profile.totalSessions}{' '}{t("phiên · cao nhất")}{' '}{Math.round(profile.bestFocusScore ?? 0)}
                       {' · '}{t(profile.tierName)}
                     </span>
                   </div>
@@ -124,7 +124,7 @@ export default function FocusProfilePanel({ onClose }) {
                 <section className="fp-tiles">
                   <div className="fp-tile">
                     <span className="fp-tile-icon">🔥</span>
-                    <strong>{profile.consistency?.currentStreakDays ?? 0}{t("ngày")}</strong>
+                    <strong>{profile.consistency?.currentStreakDays ?? 0}{' '}{t("ngày")}</strong>
                     <span className="fp-tile-label">{t("Chuỗi hiện tại · kỷ lục")}{profile.consistency?.bestStreakDays ?? 0}
                     </span>
                   </div>
@@ -235,7 +235,7 @@ export default function FocusProfilePanel({ onClose }) {
                     </span>
                     <div>
                       <strong>{profile.consistency.atRisk ? t("Nhịp học đang thưa dần") : t("Nhịp học đang ổn")}</strong>
-                      <p>{profile.consistency.message}</p>
+                      <p>{t(profile.consistency.message)}</p>
                     </div>
                   </section>
                 )}
@@ -278,7 +278,7 @@ export default function FocusProfilePanel({ onClose }) {
                       {reflections.slice(0, 10).map((item, index) => {
                         const expanded = openReflection === item.id;
                         const date = item.createdAt
-                          ? new Date(item.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: 'short' })
+                          ? new Date(item.createdAt).toLocaleDateString(language === 'en' ? 'en-US' : 'vi-VN', { day: '2-digit', month: 'short' })
                           : t("Phiên {0}", [reflections.length - index]);
                         return (
                           <article className="fp-history-item" key={item.id}>

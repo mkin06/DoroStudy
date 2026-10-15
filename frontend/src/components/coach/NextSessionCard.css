@@ -7,6 +7,7 @@
    ========================================================================== */
 
 .coach-card {
+    flex-shrink: 0;
     width: 100%;
     max-width: 520px;
     margin: 10px auto 0;
@@ -154,6 +155,8 @@
     font-size: 13px;
     font-weight: 600;
 }
+.coach-timing > span, .coach-guardrail > span, .coach-streak > span { min-width: 0; overflow-wrap: anywhere; }
+.coach-body { overflow-wrap: anywhere; }
 
 .coach-timing {
     color: #d4d6cf;

@@ -372,7 +372,7 @@ export default function ReflectionModal({
                 <span className="reflection-block-label">{t("Vì sao")}</span>
                 {causes.map((c) => (
                   <p key={c.text} className="reflection-line">
-                    <span aria-hidden="true">{c.icon}</span> {c.text}
+                    <span aria-hidden="true">{c.icon}</span> {t(c.text)}
                   </p>
                 ))}
               </section>
@@ -441,7 +441,7 @@ export default function ReflectionModal({
                 <span className="reflection-block-label">{t("Đang thấy ở bạn")}</span>
                 {strategy.map((line) => (
                   <p key={line.text} className="reflection-line">
-                    <span aria-hidden="true">{line.icon}</span> {line.text}
+                    <span aria-hidden="true">{line.icon}</span> {t(line.text)}
                   </p>
                 ))}
                 {reward?.newDiscoveries?.length > 0 && (

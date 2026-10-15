@@ -1,13 +1,9 @@
 import en from './messages.en.json';
+import { createMessageFormatter } from './messageFormat';
 
 export const LANGUAGE_KEY = 'dorostudy.language';
 const listeners = new Set();
-const templates = Object.entries(en).filter(([key]) => key.includes('{0}'))
-  .sort(([a], [b]) => b.replace(/\{\d+\}/g, '').length - a.replace(/\{\d+\}/g, '').length)
-  .map(([key, value]) => ({
-  pattern: new RegExp('^' + key.split(/\{\d+\}/).map(part => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('(.*?)') + '$', 'u'),
-  value,
-}));
+const english = createMessageFormatter(en);
 let language = 'vi';
 try {
   const saved = localStorage.getItem(LANGUAGE_KEY);
@@ -25,21 +21,8 @@ export function setLanguage(next) {
 }
 export function translate(text, values = []) {
   if (typeof text !== 'string') return text;
-  let translated = language === 'en' ? en[text] || text : text;
-  if (language === 'en' && translated === text && !values.length) {
-    for (const template of templates) {
-      const match = text.match(template.pattern);
-      if (match) {
-        translated = template.value;
-        values = match.slice(1);
-        break;
-      }
-    }
-  }
-  return translated.replace(/\{(\d+)\}/g, (match, index) => {
-    const value = values[index];
-    return value == null ? match : language === 'en' && typeof value === 'string' ? translate(value) : value;
-  });
+  if (language === 'en') return english(text, values);
+  return text.replace(/\{(\d+)\}/g, (match, index) => values[index] ?? match);
 }
 document.documentElement.lang = language;
 window.addEventListener('storage', event => {
