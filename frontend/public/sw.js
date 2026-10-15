@@ -1,4 +1,4 @@
-/* eslint-env serviceworker */
+/* global self */
 
 /**
  * Service worker của DoroStudy — chỉ làm đúng một việc: hiện lời nhắc chủ động.
@@ -57,14 +57,16 @@ async function showCurrentNudge() {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const { minutes, subject } = event.notification.data || {};
+  const { minutes, subject, type, url } = event.notification.data || {};
 
   // Mang theo kế hoạch trên URL để app mở ra là timer đã đặt sẵn — bấm thông báo xong còn
   // phải tự chỉnh lại thời gian thì phần lớn người ta bỏ giữa chừng.
   const params = new URLSearchParams();
   if (minutes) params.set('nudgeMinutes', String(minutes));
   if (subject) params.set('nudgeSubject', subject);
-  const target = params.toString() ? `/?${params}` : '/';
+  const target = type === 'reflection'
+    ? (url || '/')
+    : (params.toString() ? `/?${params}` : '/');
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {

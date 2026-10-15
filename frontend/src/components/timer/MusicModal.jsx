@@ -1,14 +1,18 @@
+import { useLanguage } from '../../hooks/useLanguage';
+import { translate as t } from '../../lib/locale';
 import React, { useState, useEffect, useRef } from 'react';
 import './MusicModal.css';
+import { captureEvent } from '../../lib/analytics';
 
 const DEFAULT_TRACKS = [
-  { id: 'jfKfPfyJRdk', title: 'Lofi Girl - Study Beats' },
-  { id: '5qap5aO4i9A', title: 'Lofi Hip Hop Radio' },
-  { id: 'tNkZsRw7hxg', title: 'Cozy Rain & Fireplace' },
-  { id: 'Dx5_WhnQD2c', title: 'Rainy Cafe Ambience' },
+  { id: 'jfKfPfyJRdk', title: 'Lofi Girl - Nhạc học tập' },
+  { id: '5qap5aO4i9A', title: 'Radio Lofi Hip Hop' },
+  { id: 'tNkZsRw7hxg', title: 'Mưa và lò sưởi ấm áp' },
+  { id: 'Dx5_WhnQD2c', title: 'Không gian quán cà phê ngày mưa' },
 ];
 
 export default function MusicModal({ isOpen, onClose, videoId, onUpdateVideoId }) {
+  useLanguage();
   const [inputUrl, setInputUrl] = useState('');
   const [showInput, setShowInput] = useState(!videoId); // Show input if no videoId is playing
   const [viewMode, setViewMode] = useState('player'); // 'player' or 'saved'
@@ -19,7 +23,7 @@ export default function MusicModal({ isOpen, onClose, videoId, onUpdateVideoId }
   // Helper to extract YouTube video ID from various URL formats
   const getYouTubeId = (url) => {
     if (!url) return null;
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
     return (match && match[2].length === 11) ? match[2] : null;
   };
@@ -29,18 +33,19 @@ export default function MusicModal({ isOpen, onClose, videoId, onUpdateVideoId }
     const extractedId = getYouTubeId(inputUrl);
     if (extractedId) {
       onUpdateVideoId(extractedId);
+      captureEvent('music_track_selected', { source: 'custom' });
       
       // Add custom track to recent list if not already there
       const isExist = recentTracks.some(t => t.id === extractedId);
       if (!isExist) {
-        const newTrack = { id: extractedId, title: `Custom Video (${extractedId})` };
+        const newTrack = { id: extractedId, title: t("Video tùy chọn ({0})", [extractedId]) };
         setRecentTracks(prev => [newTrack, ...prev].slice(0, 8));
       }
       
       setInputUrl('');
       setShowInput(false);
     } else if (inputUrl.trim()) {
-      alert('Invalid YouTube URL. Please enter a valid YouTube video link.');
+      alert(t("Liên kết YouTube không hợp lệ. Vui lòng kiểm tra lại."));
     }
   };
 
@@ -52,6 +57,7 @@ export default function MusicModal({ isOpen, onClose, videoId, onUpdateVideoId }
 
   const selectTrack = (track) => {
     onUpdateVideoId(track.id);
+    captureEvent('music_track_selected', { source: 'preset' });
     setViewMode('player'); // Switch back to player once selected
   };
 
@@ -98,7 +104,7 @@ export default function MusicModal({ isOpen, onClose, videoId, onUpdateVideoId }
                 <input
                   type="text"
                   className="music-input"
-                  placeholder="URL from YT, Spotify, Ap"
+                  placeholder={t("Dán liên kết YouTube")}
                   value={inputUrl}
                   onChange={(e) => setInputUrl(e.target.value)}
                   onKeyDown={handleKeyDown}
@@ -107,7 +113,7 @@ export default function MusicModal({ isOpen, onClose, videoId, onUpdateVideoId }
                 <button 
                   className="btn-music-action" 
                   onClick={handleApplyUrl}
-                  title="Load Video"
+                  title={t("Mở video")}
                 >
                   ✓
                 </button>
@@ -115,7 +121,7 @@ export default function MusicModal({ isOpen, onClose, videoId, onUpdateVideoId }
                   <button 
                     className="btn-music-action btn-cancel-input" 
                     onClick={() => setShowInput(false)}
-                    title="Cancel"
+                    title={t("Hủy")}
                   >
                     ✕
                   </button>
@@ -131,9 +137,7 @@ export default function MusicModal({ isOpen, onClose, videoId, onUpdateVideoId }
                   <svg className="header-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <circle cx="12" cy="12" r="10" />
                     <polyline points="12 6 12 12 16 14" />
-                  </svg>
-                  Recent
-                </button>
+                  </svg>{t("Gần đây")}</button>
                 <button 
                   className="btn-header-link"
                   onClick={() => setShowInput(true)}
@@ -142,9 +146,7 @@ export default function MusicModal({ isOpen, onClose, videoId, onUpdateVideoId }
                     <path d="M9 18V5l12-2v13" />
                     <circle cx="6" cy="18" r="3" />
                     <circle cx="18" cy="16" r="3" />
-                  </svg>
-                  Change
-                </button>
+                  </svg>{t("Đổi nhạc")}</button>
               </div>
             )}
           </div>
@@ -157,7 +159,7 @@ export default function MusicModal({ isOpen, onClose, videoId, onUpdateVideoId }
                 width="100%"
                 height="100%"
                 src={`https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1`}
-                title="YouTube study music player"
+                title={t("Trình phát nhạc học tập YouTube")}
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
@@ -165,7 +167,7 @@ export default function MusicModal({ isOpen, onClose, videoId, onUpdateVideoId }
             ) : (
               <div className="music-player-placeholder">
                 <span className="placeholder-icon">🎵</span>
-                <p>Paste a YouTube link above to play music</p>
+                <p>{t("Dán liên kết YouTube ở phía trên để phát nhạc")}</p>
               </div>
             )}
           </div>
@@ -178,7 +180,7 @@ export default function MusicModal({ isOpen, onClose, videoId, onUpdateVideoId }
               checked={syncWithRoom}
               onChange={(e) => setSyncWithRoom(e.target.checked)}
             />
-            <span>Sync music with room</span>
+            <span>{t("Đồng bộ nhạc với phòng học")}</span>
           </label>
         </>
       ) : (
@@ -186,11 +188,11 @@ export default function MusicModal({ isOpen, onClose, videoId, onUpdateVideoId }
         <>
           {/* Header */}
           <div className="music-popover-header">
-            <h3 className="music-popover-title">Saved Music</h3>
+            <h3 className="music-popover-title">{t("Nhạc đã lưu")}</h3>
             <button 
               className="btn-music-action btn-close-music" 
               onClick={() => setViewMode('player')}
-              title="Back to Player"
+              title={t("Quay lại trình phát")}
             >
               ✕
             </button>
@@ -208,12 +210,12 @@ export default function MusicModal({ isOpen, onClose, videoId, onUpdateVideoId }
                   {/* Video Thumbnail */}
                   <img 
                     src={`https://img.youtube.com/vi/${track.id}/default.jpg`} 
-                    alt={track.title} 
+                    alt={t(track.title)}
                     className="saved-track-thumbnail" 
                   />
                   
                   {/* Track Title */}
-                  <span className="saved-track-title">{track.title}</span>
+                  <span className="saved-track-title">{t(track.title)}</span>
                   
                   {/* Youtube Red Icon */}
                   <svg className="yt-brand-icon" viewBox="0 0 24 24" fill="#ff0000">
@@ -226,14 +228,14 @@ export default function MusicModal({ isOpen, onClose, videoId, onUpdateVideoId }
                     <button 
                       className="btn-track-action btn-track-play" 
                       onClick={() => selectTrack(track)}
-                      title="Play"
+                      title={t("Phát")}
                     >
                       ✓
                     </button>
                     <button 
                       className="btn-track-action btn-track-delete" 
                       onClick={(e) => deleteTrack(e, track.id)}
-                      title="Delete"
+                      title={t("Xóa")}
                     >
                       ✕
                     </button>
@@ -243,7 +245,7 @@ export default function MusicModal({ isOpen, onClose, videoId, onUpdateVideoId }
             ) : (
               <div className="no-saved-tracks">
                 <span className="no-tracks-icon">📂</span>
-                <p>No saved music tracks yet.</p>
+                <p>{t("Chưa có bản nhạc nào được lưu.")}</p>
               </div>
             )}
           </div>

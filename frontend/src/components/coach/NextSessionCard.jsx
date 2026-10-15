@@ -1,17 +1,20 @@
+import { useLanguage } from '../../hooks/useLanguage';
+import { translate as t } from '../../lib/locale';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { ArrowRight, Check, ChevronDown, Clock3, Flame, ShieldCheck } from 'lucide-react';
 import './NextSessionCard.css';
 import { reflectionAPI } from '../../api/reflection';
-import { adviceIcon } from '../../utils/adviceIcon';
 import { scoreBand } from '../../utils/scoreLabel';
+import { captureEvent } from '../../lib/analytics';
 
 // Màu và nhãn cho phán quyết khung giờ. Ba trạng thái thật + một trạng thái "chưa biết" —
 // và "chưa biết" phải nhìn khác hẳn ba cái kia, vì nói thẳng là chưa đủ dữ liệu đáng tin
 // hơn nhiều so với tô một màu xanh giả vờ mọi thứ đều ổn.
 const VERDICTS = {
-  GOOD: { icon: '🟢', label: 'Giờ vàng của bạn', className: 'good' },
-  OK: { icon: '🟡', label: 'Học được', className: 'ok' },
-  POOR: { icon: '🟠', label: 'Khung giờ yếu', className: 'poor' },
-  UNKNOWN: { icon: '⚪', label: 'Đang tìm hiểu bạn', className: 'unknown' },
+  GOOD: { label: 'Giờ vàng của bạn', className: 'good' },
+  OK: { label: 'Học được', className: 'ok' },
+  POOR: { label: 'Khung giờ yếu', className: 'poor' },
+  UNKNOWN: { label: 'Đang tìm hiểu bạn', className: 'unknown' },
 };
 
 /**
@@ -31,7 +34,8 @@ const VERDICTS = {
  *  - onApply:  ({ durationMinutes, breakMinutes, subject }) => void — áp kế hoạch vào timer
  *  - refreshKey: đổi giá trị để buộc tải lại (ví dụ sau khi vừa xong một phiên)
  */
-export default function NextSessionCard({ subject, disabled, onApply, refreshKey }) {
+export default function NextSessionCard({ subject, disabled, onApply, refreshKey, userId }) {
+  useLanguage();
   const [plan, setPlan] = useState(null);
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -42,7 +46,7 @@ export default function NextSessionCard({ subject, disabled, onApply, refreshKey
   const debounceRef = useRef(null);
 
   useEffect(() => {
-    if (disabled) return undefined;
+    if (disabled || !userId) return undefined;
 
     let cancelled = false;
     clearTimeout(debounceRef.current);
@@ -68,7 +72,7 @@ export default function NextSessionCard({ subject, disabled, onApply, refreshKey
       cancelled = true;
       clearTimeout(debounceRef.current);
     };
-  }, [subject, disabled, refreshKey]);
+  }, [subject, disabled, refreshKey, userId]);
 
   // Kế hoạch mới thì nút "Áp dụng" phải trở lại trạng thái chưa bấm
   useEffect(() => {
@@ -83,6 +87,7 @@ export default function NextSessionCard({ subject, disabled, onApply, refreshKey
       subject: plan.subject,
     });
     setApplied(true);
+    captureEvent('ai_plan_applied', { source: 'next_session_card', duration_minutes: plan.durationMinutes });
   }, [plan, onApply]);
 
   if (failed || loading || !plan || disabled) {
@@ -102,34 +107,38 @@ export default function NextSessionCard({ subject, disabled, onApply, refreshKey
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
       >
-        <span className="coach-verdict" title={verdict.label}>{verdict.icon}</span>
-        <span className="coach-headline">{plan.headline}</span>
-        <span className="coach-prediction" title={`Dự đoán: ${band.label}`}>
-          <span aria-hidden="true">{band.emoji}</span>
-          <strong>{Math.round(plan.predictedFocusScore)}</strong>
-          <span className="coach-prediction-label">dự đoán · {band.label}</span>
+        <span className="coach-intro">
+          <span className="coach-eyebrow">
+            <span className="coach-verdict" aria-hidden="true" />{t("Gợi ý cho phiên tới")}</span>
+          <span className="coach-headline">{t(plan.headline)}</span>
         </span>
-        <span className="coach-chevron" aria-hidden="true">{expanded ? '▲' : '▼'}</span>
+        <span className="coach-prediction" title={t("Dự đoán: {0}", [band.label])}
+          aria-label={t("Điểm dự kiến {0}: {1}", [Math.round(plan.predictedFocusScore), band.label])}>
+          <strong>{Math.round(plan.predictedFocusScore)}</strong>
+          <span className="coach-prediction-label">{t("Điểm dự kiến")}<br />{t(band.label)}</span>
+        </span>
+        <ChevronDown className="coach-chevron" size={17} aria-hidden="true" />
       </button>
 
       {expanded && (
         <div className="coach-body">
           <p className={`coach-timing ${verdict.className}`}>
-            {verdict.icon} {plan.timingMessage}
+            <Clock3 size={17} aria-hidden="true" />
+            <span><strong>{t(verdict.label)}</strong>{t(plan.timingMessage)}</span>
           </p>
 
           {plan.guardrail && (
-            <p className="coach-guardrail">{adviceIcon(plan.guardrail, '🛡️')} {plan.guardrail}</p>
+            <p className="coach-guardrail"><ShieldCheck size={17} aria-hidden="true" /><span>{t(plan.guardrail)}</span></p>
           )}
 
           {plan.streakMessage && (
-            <p className="coach-streak">🔥 {plan.streakMessage}</p>
+            <p className="coach-streak"><Flame size={17} aria-hidden="true" /><span>{t(plan.streakMessage)}</span></p>
           )}
 
           {plan.reasons?.length > 0 && (
             <ul className="coach-reasons">
               {plan.reasons.map((reason) => (
-                <li key={reason}>{reason}</li>
+                <li key={reason}>{t(reason)}</li>
               ))}
             </ul>
           )}
@@ -137,10 +146,10 @@ export default function NextSessionCard({ subject, disabled, onApply, refreshKey
           <div className="coach-footer">
             <span className="coach-meta">
               {plan.personalized
-                ? `Dựng từ ${plan.basedOnSessions} phiên của bạn · độ tin cậy ${plan.confidence}%`
-                : `Gợi ý mặc định — cần thêm ${Math.max(0, 3 - plan.basedOnSessions)} phiên nữa để AI hiểu riêng bạn`}
+                ? t("Dựa trên {0} phiên của bạn · độ tin cậy {1}%", [plan.basedOnSessions, plan.confidence])
+                : t("Gợi ý mặc định — cần thêm {0} phiên nữa để AI hiểu riêng bạn", [Math.max(0, 3 - plan.basedOnSessions)])}
               {accuracy?.sampleSize > 0
-                && ` · AI đang đoán lệch trung bình ${accuracy.meanAbsoluteError} điểm`}
+                && t(" · AI đang đoán lệch trung bình {0} điểm", [accuracy.meanAbsoluteError])}
             </span>
             <button
               type="button"
@@ -149,8 +158,8 @@ export default function NextSessionCard({ subject, disabled, onApply, refreshKey
               disabled={applied}
             >
               {applied
-                ? '✓ Đã đặt'
-                : `Đặt ${plan.durationMinutes}′ ${plan.subject ? `· ${plan.subject}` : ''}`}
+                ? <><Check size={16} aria-hidden="true" />{t("Đã đặt")}</>
+                : <>{t("Đặt")}{plan.durationMinutes}{t("phút")}{plan.subject ? `· ${plan.subject}` : ''}<ArrowRight size={16} aria-hidden="true" /></>}
             </button>
           </div>
         </div>

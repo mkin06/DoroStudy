@@ -113,6 +113,10 @@ cd backend
 Backend default URL:
 - http://localhost:8080
 
+Local runs without an explicit Spring profile use Tomcat sessions in memory, so login does not require Redis. Sessions end when the backend restarts. The Docker/Railway `docker` profile continues to store sessions in Redis. If you see `Unable to connect to localhost:6379` while logging in locally, rebuild and restart the backend so it loads `application-default.properties`.
+
+Local Google login uses the public web client ID in `application-default.properties`, matching `VITE_GOOGLE_CLIENT_ID` in `frontend/.env`. Spring Boot IDE runs do not automatically read the root `.env`. To use a different OAuth client, set `GOOGLE_CLIENT_ID` in the backend run environment and the same value as `VITE_GOOGLE_CLIENT_ID` for the frontend, then restart both. Docker/Railway uses its existing `GOOGLE_CLIENT_ID` environment variable.
+
 Quick health check:
 - GET http://localhost:8080/api/ping
 

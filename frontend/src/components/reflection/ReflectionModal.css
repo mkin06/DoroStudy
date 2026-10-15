@@ -15,7 +15,7 @@
     background: #1a1a1a;
     border-radius: 16px;
     width: 90%;
-    max-width: 440px;
+    max-width: 500px;
     max-height: 85vh;
     overflow-y: auto;
     color: white;
@@ -55,13 +55,13 @@
 
 .reflection-title {
     margin: 0 24px 4px 0;
-    font-size: 20px;
+    font-size: 24px;
     font-weight: 700;
 }
 
 .reflection-subtitle {
     margin: 0 0 20px;
-    font-size: 13px;
+    font-size: 15px;
     color: rgba(255, 255, 255, 0.5);
 }
 
@@ -83,7 +83,7 @@
 .reflection-question label,
 .reflection-label {
     display: block;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 600;
     margin-bottom: 10px;
     color: rgba(255, 255, 255, 0.85);
@@ -657,7 +657,7 @@
 
 .reflection-line {
     margin: 0 0 5px;
-    font-size: 12.5px;
+    font-size: 16px;
     line-height: 1.5;
     color: rgba(255, 255, 255, 0.82);
 }
@@ -694,7 +694,7 @@
     background: rgba(255, 255, 255, 0.1);
     border-radius: 8px;
     padding: 6px 10px;
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 600;
     color: #fff;
 }
@@ -725,3 +725,5 @@
 .reflection-unlocked-chip {
     cursor: help;
 }
+.reflection-product-feedback { width: 100%; padding: 15px 0 2px; border: 0; background: transparent; color: #d8ba87; font: inherit; font-size: 12px; line-height: 1.7; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.reflection-product-feedback:focus-visible { outline: 2px solid #d8ba87; outline-offset: 3px; }

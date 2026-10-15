@@ -1,0 +1,7 @@
+.language-switcher { display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0; padding: 4px; border: 1px solid #ffffff50; border-radius: 9px; background: #20231ef2; color: #eeeadf; box-shadow: 0 2px 8px #0002; }
+.language-switcher > svg { margin: 0 4px; }
+.language-switcher button { min-width: 32px; min-height: 30px; padding: 5px; border: 0; border-radius: 5px; background: transparent; color: inherit; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.language-switcher button[aria-pressed="true"] { background: #eeeadf; color: #20231e; }
+.language-switcher button:focus-visible { outline: 2px solid #d8ba87; outline-offset: 2px; }
+.auth-language-switcher { position: fixed; top: max(16px, env(safe-area-inset-top)); right: 20px; z-index: 1100; }
+@media (max-width: 380px) { .language-switcher > svg { display: none; } .language-switcher button { min-width: 27px; } }

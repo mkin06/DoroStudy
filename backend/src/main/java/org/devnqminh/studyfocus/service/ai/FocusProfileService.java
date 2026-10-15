@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Nạp lịch sử reflection và giao cho {@link FocusInsightEngine} phân tích.
@@ -38,10 +39,12 @@ public class FocusProfileService {
      * cũ từ nhiều tháng trước không làm nhiễu bức tranh hiện tại.
      */
     private static final int MAX_HISTORY = 60;
+    private static final long POINT_CACHE_NANOS = Duration.ofSeconds(20).toNanos();
 
     private final AiReflectionRepository aiReflectionRepository;
     private final FocusInsightEngine engine;
     private final AiQuotaProperties quotaProperties;
+    private final ConcurrentHashMap<Long, CachedPoints> pointCache = new ConcurrentHashMap<>();
 
     @Value("${ai.insights.zone:Asia/Ho_Chi_Minh}")
     private String zoneId;
@@ -112,17 +115,18 @@ public class FocusProfileService {
     ) {
     }
 
+    /** Xoá ngay dữ liệu cũ sau khi một reflection được thêm hoặc phiên bị xoá. */
+    public void invalidate(Long userId) {
+        pointCache.remove(userId);
+    }
+
     // ------------------------------------------------------------------
 
     /**
      * @param historyDays cửa sổ lịch sử theo ngày; âm = lấy hết trong giới hạn MAX_HISTORY
      */
     private List<SessionPoint> loadPoints(Long userId, int historyDays) {
-        List<AiReflection> recent = aiReflectionRepository.findTop60ByUserIdOrderByIdDesc(userId);
-        List<AiReflection> ordered = new ArrayList<>(recent);
-        Collections.reverse(ordered);    // repository trả mới nhất trước, engine cần cũ → mới
-
-        List<SessionPoint> points = ordered.stream().map(this::toPoint).toList();
+        List<SessionPoint> points = loadAllPoints(userId);
         if (historyDays < 0) {
             return points;
         }
@@ -131,6 +135,39 @@ public class FocusProfileService {
                 .filter(p -> p.startedAt() == null || p.startedAt().isAfter(cutoff))
                 .toList();
     }
+
+    /**
+     * Trang chính gọi nudge và kế hoạch gần như cùng lúc. Cache rất ngắn theo user giúp hai
+     * endpoint dùng chung một lần đọc 60 reflection, không phụ thuộc Redis và không giữ dữ
+     * liệu cũ sau thao tác ghi nhờ invalidate().
+     */
+    private List<SessionPoint> loadAllPoints(Long userId) {
+        long now = System.nanoTime();
+        if (pointCache.size() > 512) {
+            pointCache.entrySet().removeIf(entry -> entry.getValue().expiresAtNanos() <= now);
+            if (pointCache.size() > 2048) {
+                pointCache.clear();
+            }
+        }
+        CachedPoints cached = pointCache.get(userId);
+        if (cached != null && cached.expiresAtNanos() > now) {
+            return cached.points();
+        }
+
+        return pointCache.compute(userId, (key, current) -> {
+            long checkedAt = System.nanoTime();
+            if (current != null && current.expiresAtNanos() > checkedAt) {
+                return current;
+            }
+            List<AiReflection> recent = aiReflectionRepository.findTop60ByUserIdOrderByIdDesc(userId);
+            List<AiReflection> ordered = new ArrayList<>(recent);
+            Collections.reverse(ordered);
+            List<SessionPoint> loaded = List.copyOf(ordered.stream().map(this::toPoint).toList());
+            return new CachedPoints(loaded, checkedAt + POINT_CACHE_NANOS);
+        }).points();
+    }
+
+    private record CachedPoints(List<SessionPoint> points, long expiresAtNanos) {}
 
     /**
      * Cắt chiều sâu theo môn cho gói thấp. Giữ lại đúng những môn có nhiều phiên nhất

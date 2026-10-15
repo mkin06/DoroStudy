@@ -38,7 +38,8 @@ public record AiAnalyzeRequest(
          * "bạn khai một đằng làm một nẻo" là câu quá nặng để cho model tự phán.
          */
         String sessionNotes,
-        String noteVerdict
+        String noteVerdict,
+        String language
 ) {
 
     public record CurrentSession(

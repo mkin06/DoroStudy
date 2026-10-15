@@ -33,6 +33,7 @@ import org.devnqminh.studyfocus.service.ai.NoteAnalyzer;
 import org.devnqminh.studyfocus.service.ai.ReflectionFallback;
 import org.devnqminh.studyfocus.service.ai.ReflectionWriter;
 import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -119,10 +120,12 @@ public class AiReflectionServiceImpl implements IAiReflectionService {
             // user hết lượt AI vẫn nhận được giá trị, đó là điểm bán của gói Free.
             AiAnalyzeResponse fallback = reflectionFallback.build(
                     request.completionPercent(), request.focusLevel(),
-                    request.energyLevel(), request.distractionReasons());
+                    request.energyLevel(), request.distractionReasons(), request.language());
 
-            ReflectionResponse saved = attachReward(reflectionWriter.persist(
-                    session, userId, request, fallback, decision.unlimited() ? null : 0), userId)
+            ReflectionResponse persisted = reflectionWriter.persist(
+                    session, userId, request, fallback, decision.unlimited() ? null : 0);
+            focusProfileService.invalidate(userId);
+            ReflectionResponse saved = attachReward(persisted, userId)
                     .withNoteInsight(noteInsight)
                     .withNextPlan(planAfterSession(userId, session));
 
@@ -148,12 +151,13 @@ public class AiReflectionServiceImpl implements IAiReflectionService {
         } else {
             feedback = reflectionFallback.build(
                     request.completionPercent(), request.focusLevel(),
-                    request.energyLevel(), request.distractionReasons());
+                    request.energyLevel(), request.distractionReasons(), request.language());
             outcome = AiCallLog.Outcome.FALLBACK_LOCAL;
         }
 
         Integer remaining = decision.unlimited() ? null : decision.remaining();
         ReflectionResponse saved = reflectionWriter.persist(session, userId, request, feedback, remaining);
+        focusProfileService.invalidate(userId);
 
         aiCallLogger.record(userId, session.getId(), OPERATION, outcome,
                 aiRequest, feedback, call.latencyMs(), call.errorMessage());
@@ -164,8 +168,8 @@ public class AiReflectionServiceImpl implements IAiReflectionService {
     }
 
     @Override
-    public List<ReflectionResponse> getUserReflections(Long userId) {
-        return aiReflectionRepository.findByUserIdOrderByIdDesc(userId).stream()
+    public List<ReflectionResponse> getUserReflections(Long userId, int limit) {
+        return aiReflectionRepository.findByUserIdOrderByIdDesc(userId, PageRequest.of(0, limit)).stream()
                 .map(r -> toResponse(r, null))
                 .toList();
     }
@@ -354,7 +358,8 @@ public class AiReflectionServiceImpl implements IAiReflectionService {
                 request.distractionReasons() == null ? List.of() : request.distractionReasons());
 
         return new AiAnalyzeRequest(current, history, knownPatterns, plannedNextSession,
-                noteExcerpt(sessionNotes), noteInsight == null ? null : noteInsight.message());
+                noteExcerpt(sessionNotes), noteInsight == null ? null : noteInsight.message(),
+                "en".equals(request.language()) ? "en" : "vi");
     }
 
     /**

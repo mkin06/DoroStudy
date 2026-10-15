@@ -33,7 +33,7 @@ spring.data.redis.connect-timeout=500ms
 # Quota gọi AI mỗi ngày theo gói cước (COGS biến đổi — cấu hình được, không hardcode).
 # Giá trị âm = không giới hạn.
 # ---------------------------------------------------------------------
-ai.quota.limits.FREE=${AI_QUOTA_FREE:3}
+ai.quota.limits.FREE=${AI_QUOTA_FREE:15}
 ai.quota.limits.PREMIUM=${AI_QUOTA_PREMIUM:50}
 # Giới hạn tính năng Freemium theo gói (âm = không giới hạn).
 # Phần lõi (điểm tập trung, chuỗi ngày, độ dài tối ưu, ngưỡng năng lượng, cảnh báo tụt nhịp)

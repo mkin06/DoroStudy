@@ -7,17 +7,26 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.List;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByUsername(String username);
     Optional<User> findByEmail(String email);
+    Optional<User> findByUsernameIgnoreCase(String username);
+    Optional<User> findByEmailIgnoreCase(String email);
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
     Optional<User> findById(Long id);
 
-    //  EAGER FETCH để tránh LazyInitializationException và N+1 query
-    @Query("SELECT u FROM User u LEFT JOIN FETCH u.times WHERE u.id = :id")
-    Optional<User> findByIdWithTimes(@Param("id") Long id);
+    // Tìm được cả dữ liệu cũ từng vô tình lưu khoảng trắng ở hai đầu.
+    @Query("SELECT u FROM User u WHERE lower(trim(u.username)) = lower(:value) OR lower(trim(coalesce(u.email, ''))) = lower(:value)")
+    List<User> findLoginCandidates(@Param("value") String value);
+
+    @Query("SELECT CASE WHEN count(u) > 0 THEN true ELSE false END FROM User u WHERE lower(trim(u.username)) = lower(:username)")
+    boolean existsByNormalizedUsername(@Param("username") String username);
+
+    @Query("SELECT CASE WHEN count(u) > 0 THEN true ELSE false END FROM User u WHERE lower(trim(coalesce(u.email, ''))) = lower(:email)")
+    boolean existsByNormalizedEmail(@Param("email") String email);
 
     /**
      * Mã gói cước của user để tra quota AI, lấy bằng một query thay vì chạm vào

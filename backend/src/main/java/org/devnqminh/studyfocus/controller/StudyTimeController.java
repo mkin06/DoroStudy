@@ -25,7 +25,7 @@ public class StudyTimeController {
     private Long requireUserId(HttpSession session) {
         Long userId = (Long) session.getAttribute("USER_ID");
         if (userId == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthenticated");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Bạn chưa đăng nhập.");
         }
         return userId;
     }
@@ -49,10 +49,12 @@ public class StudyTimeController {
      * GET /api/study-sessions
      */
     @GetMapping
-    public List<SessionResponse> getUserSessions(HttpSession session) {
+    public List<SessionResponse> getUserSessions(
+            @RequestParam(value = "days", required = false) Integer days,
+            HttpSession session) {
         // TODO: Sau này lấy userId từ JWT
         Long userId = requireUserId(session);
-        return studyTimeService.getUserSessions(userId);
+        return studyTimeService.getUserSessions(userId, days);
     }
     /**
      * Lấy một session theo ID

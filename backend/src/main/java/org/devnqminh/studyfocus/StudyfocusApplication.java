@@ -8,6 +8,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @SpringBootApplication(proxyBeanMethods = false)
@@ -18,9 +19,11 @@ public class StudyfocusApplication {
     }
 
     @Bean
-    CommandLineRunner init(UserRepository userRepository, NoteTypeRepository noteTypeRepository) {
+    CommandLineRunner init(UserRepository userRepository,
+                           NoteTypeRepository noteTypeRepository,
+                           @Value("${app.seed-demo-data:false}") boolean seedDemoData) {
         return args -> {
-            if (userRepository.findByUsername("testuser").isEmpty()) {
+            if (seedDemoData && userRepository.findByUsername("testuser").isEmpty()) {
                 User user = User.builder()
                         .name("Test User")
                         .username("testuser")

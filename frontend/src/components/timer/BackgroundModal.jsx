@@ -1,3 +1,5 @@
+import { useLanguage } from '../../hooks/useLanguage';
+import { translate as t } from '../../lib/locale';
 import React, { useState } from 'react';
 import { Image, CloudRain } from 'lucide-react';
 import './BackgroundModal.css';
@@ -12,28 +14,28 @@ const getYouTubeId = (url) => {
 const MOTION_PRESETS = [
   {
     id: 'cafe-motion',
-    name: 'Cozy Cafe',
+    name: 'Quán cà phê ấm cúng',
     type: 'video',
     thumbnail: 'https://i.ytimg.com/vi/35ZAf4uJSWw/maxresdefault.jpg',
     url: '35ZAf4uJSWw',
   },
   {
     id: 'forest-motion',
-    name: 'Cozy Campfire',
+    name: 'Lửa trại ấm cúng',
     type: 'video',
     thumbnail: 'https://i.ytimg.com/vi/nALYrGwgVVo/maxresdefault.jpg',
     url: 'nALYrGwgVVo',
   },
   {
     id: 'beach-motion',
-    name: 'Sandy Beach',
+    name: 'Bãi biển',
     type: 'video',
     thumbnail: 'https://i.ytimg.com/vi/LNieCcBSUvY/maxresdefault.jpg',
     url: 'LNieCcBSUvY',
   },
   {
     id: 'river-motion',
-    name: 'Forest Stream',
+    name: 'Suối trong rừng',
     type: 'video',
     thumbnail: 'https://i.ytimg.com/vi/TGPHm49JLoU/maxresdefault.jpg',
     url: 'TGPHm49JLoU',
@@ -43,28 +45,28 @@ const MOTION_PRESETS = [
 const STILL_PRESETS = [
   {
     id: 'cafe-still',
-    name: 'Cozy Cafe',
+    name: 'Quán cà phê ấm cúng',
     type: 'image',
     thumbnail: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400&auto=format&fit=crop',
     url: 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=1600&auto=format&fit=crop',
   },
   {
     id: 'forest-still',
-    name: 'Sunlit Forest',
+    name: 'Rừng ngập nắng',
     type: 'image',
     thumbnail: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&auto=format&fit=crop',
     url: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1600&auto=format&fit=crop',
   },
   {
     id: 'beach-still',
-    name: 'Sandy Beach',
+    name: 'Bãi biển',
     type: 'image',
     thumbnail: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&auto=format&fit=crop',
     url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1600&auto=format&fit=crop',
   },
   {
     id: 'bar-still',
-    name: 'Cozy Bar',
+    name: 'Quán nhỏ ấm cúng',
     type: 'image',
     thumbnail: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=400&auto=format&fit=crop',
     url: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=1600&auto=format&fit=crop',
@@ -72,13 +74,14 @@ const STILL_PRESETS = [
 ];
 
 const WEATHER_PRESETS = [
-  { id: 'clear', name: 'Clear Day', label: '☀️ Clear' },
-  { id: 'rain', name: 'Rainy Scene', label: '🌧️ Rainy' },
-  { id: 'snow', name: 'Snowy Season', label: '❄️ Snowy' },
-  { id: 'storm', name: 'Thunderstorm', label: '⚡ Stormy' },
+  { id: 'clear', name: 'Trời quang', label: '☀️ Quang đãng' },
+  { id: 'rain', name: 'Khung cảnh mưa', label: '🌧️ Mưa' },
+  { id: 'snow', name: 'Mùa tuyết', label: '❄️ Tuyết' },
+  { id: 'storm', name: 'Mưa giông', label: '⚡ Giông' },
 ];
 
 export default function BackgroundModal({ onClose, scene, onChangeScene }) {
+  useLanguage();
   const [category, setCategory] = useState('background'); // 'background' or 'weather'
   const [subTab, setSubTab] = useState('motion'); // 'motion', 'stills', 'personalize'
   const [customUrl, setCustomUrl] = useState('');
@@ -128,7 +131,7 @@ export default function BackgroundModal({ onClose, scene, onChangeScene }) {
         
         {/* Header */}
         <div className="background-modal-header">
-          <h2>Set your focus scene</h2>
+          <h2>{t("Chọn không gian tập trung")}</h2>
           <div className="background-modal-header-actions">
             
             {/* Opacity slider */}
@@ -160,14 +163,14 @@ export default function BackgroundModal({ onClose, scene, onChangeScene }) {
               onClick={() => setCategory('background')}
             >
               <Image size={15} strokeWidth={2.2} className="btn-category-icon" />
-              <span>Background</span>
+              <span>{t("Hình nền")}</span>
             </button>
             <button
               className={`btn-category ${category === 'weather' ? 'active' : ''}`}
               onClick={() => setCategory('weather')}
             >
               <CloudRain size={15} strokeWidth={2.2} className="btn-category-icon" />
-              <span>Weather</span>
+              <span>{t("Thời tiết")}</span>
             </button>
           </div>
         </div>
@@ -180,21 +183,15 @@ export default function BackgroundModal({ onClose, scene, onChangeScene }) {
               <button
                 className={`btn-subtab ${subTab === 'motion' ? 'active' : ''}`}
                 onClick={() => setSubTab('motion')}
-              >
-                Motion
-              </button>
+              >{t("Chuyển động")}</button>
               <button
                 className={`btn-subtab ${subTab === 'stills' ? 'active' : ''}`}
                 onClick={() => setSubTab('stills')}
-              >
-                Stills
-              </button>
+              >{t("Ảnh tĩnh")}</button>
               <button
                 className={`btn-subtab ${subTab === 'personalize' ? 'active' : ''}`}
                 onClick={() => setSubTab('personalize')}
-              >
-                Personalize
-              </button>
+              >{t("Tùy chỉnh")}</button>
             </div>
 
             {/* Grid display for Motion/Stills */}
@@ -208,13 +205,13 @@ export default function BackgroundModal({ onClose, scene, onChangeScene }) {
                       className={`scene-card ${isActive ? 'active' : ''}`}
                       onClick={() => selectPreset(preset)}
                     >
-                      <img src={preset.thumbnail} alt={preset.name} className="scene-thumbnail" />
+                      <img src={preset.thumbnail} alt={t(preset.name)} className="scene-thumbnail" />
                       <div className="play-button-overlay">
                         <svg className="play-icon-svg" viewBox="0 0 24 24" fill="currentColor">
                           <polygon points="5 3 19 12 5 21 5 3" />
                         </svg>
                       </div>
-                      <span className="scene-name">{preset.name}</span>
+                      <span className="scene-name">{t(preset.name)}</span>
                       {isActive && <div className="active-badge">✓</div>}
                     </div>
                   );
@@ -232,8 +229,8 @@ export default function BackgroundModal({ onClose, scene, onChangeScene }) {
                       className={`scene-card ${isActive ? 'active' : ''}`}
                       onClick={() => selectPreset(preset)}
                     >
-                      <img src={preset.thumbnail} alt={preset.name} className="scene-thumbnail" />
-                      <span className="scene-name">{preset.name}</span>
+                      <img src={preset.thumbnail} alt={t(preset.name)} className="scene-thumbnail" />
+                      <span className="scene-name">{t(preset.name)}</span>
                       {isActive && <div className="active-badge">✓</div>}
                     </div>
                   );
@@ -244,19 +241,19 @@ export default function BackgroundModal({ onClose, scene, onChangeScene }) {
             {/* Personalize (Custom URL input) */}
             {subTab === 'personalize' && (
               <form onSubmit={handleApplyCustom} className="personalize-form">
-                <p className="personalize-desc">Paste a direct image URL, MP4 video link, or YouTube URL to set your custom background scene.</p>
+                <p className="personalize-desc">{t("Dán liên kết ảnh, video MP4 hoặc YouTube để tạo không gian riêng.")}</p>
                 <div className="form-group-scene">
-                  <label>Background URL</label>
+                  <label>{t("Liên kết hình nền")}</label>
                   <input
                     type="url"
-                    placeholder="https://youtube.com/watch?v=... or https://example.com/video.mp4"
+                    placeholder={t("https://youtube.com/watch?v=... hoặc https://example.com/video.mp4")}
                     value={customUrl}
                     onChange={(e) => setCustomUrl(e.target.value)}
                     required
                   />
                 </div>
                 <div className="form-group-scene">
-                  <label>Background Type</label>
+                  <label>{t("Loại hình nền")}</label>
                   <div className="custom-type-selector">
                     <label>
                       <input
@@ -266,7 +263,7 @@ export default function BackgroundModal({ onClose, scene, onChangeScene }) {
                         checked={customType === 'image'}
                         onChange={() => setCustomType('image')}
                       />
-                      <span>Static Image</span>
+                      <span>{t("Ảnh tĩnh")}</span>
                     </label>
                     <label>
                       <input
@@ -276,11 +273,11 @@ export default function BackgroundModal({ onClose, scene, onChangeScene }) {
                         checked={customType === 'video'}
                         onChange={() => setCustomType('video')}
                       />
-                      <span>Looping Video</span>
+                      <span>{t("Video lặp")}</span>
                     </label>
                   </div>
                 </div>
-                <button type="submit" className="btn-apply-custom">Apply Custom Scene</button>
+                <button type="submit" className="btn-apply-custom">{t("Áp dụng không gian riêng")}</button>
               </form>
             )}
           </>
@@ -293,8 +290,8 @@ export default function BackgroundModal({ onClose, scene, onChangeScene }) {
                 className={`weather-card ${scene.weather === weather.id ? 'active' : ''}`}
                 onClick={() => selectWeather(weather.id)}
               >
-                <span className="weather-card-label">{weather.label}</span>
-                <span className="weather-card-name">{weather.name}</span>
+                <span className="weather-card-label">{t(weather.label)}</span>
+                <span className="weather-card-name">{t(weather.name)}</span>
                 {scene.weather === weather.id && <div className="active-badge">✓</div>}
               </button>
             ))}

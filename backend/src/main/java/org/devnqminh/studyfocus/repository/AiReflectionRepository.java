@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Pageable;
 
 @Repository
 public interface AiReflectionRepository extends JpaRepository<AiReflection, Long> {
@@ -23,4 +24,6 @@ public interface AiReflectionRepository extends JpaRepository<AiReflection, Long
     long countByUserId(Long userId);
 
     List<AiReflection> findByUserIdOrderByIdDesc(Long userId);
+
+    List<AiReflection> findByUserIdOrderByIdDesc(Long userId, Pageable pageable);
 }

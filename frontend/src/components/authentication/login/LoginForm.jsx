@@ -1,3 +1,5 @@
+import { useLanguage } from '../../../hooks/useLanguage';
+import { translate as t } from '../../../lib/locale';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { User, Lock, Facebook, Twitter } from 'lucide-react';
@@ -5,7 +7,8 @@ import { login } from '../../../api/authentication/auth';
 import GoogleAuthButton from '../GoogleAuthButton';
 import './LoginForm.css';
 
-export default function LoginForm({  }) {
+export default function LoginForm() {
+  useLanguage();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -29,12 +32,27 @@ export default function LoginForm({  }) {
     setLoading(true);
 
     try {
-      const res = await login({ username, password });
+      const normalizedUsername = username.trim();
+      await login({ username: normalizedUsername, password });
       
       // Nếu chọn Remember Me, lưu thông tin
       if (rememberMe) {
         localStorage.setItem('rememberMe', 'true');
-        localStorage.setItem('username', username);
+        localStorage.setItem('username', normalizedUsername);
+        // Giao mật khẩu cho password manager của trình duyệt/hệ điều hành thay vì
+        // lưu dạng rõ trong localStorage. Chrome/Edge sẽ hỏi người dùng trước khi lưu.
+        if ('PasswordCredential' in window && navigator.credentials?.store) {
+          try {
+            const credential = new window.PasswordCredential({
+              id: normalizedUsername,
+              name: normalizedUsername,
+              password,
+            });
+            await navigator.credentials.store(credential);
+          } catch {
+            // Trình duyệt vẫn có thể lưu qua autocomplete chuẩn ở các input bên dưới.
+          }
+        }
       } else {
         // Nếu không chọn, xóa thông tin đã lưu
         localStorage.removeItem('rememberMe');
@@ -43,14 +61,10 @@ export default function LoginForm({  }) {
       
       window.location.href = '/';
     } catch (err) {
-      setError('Username or Password is not correct.');
+      setError(err.message || t("Tên đăng nhập/email hoặc mật khẩu không đúng."));
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSocialLogin = (platform) => {
-    console.log(`${platform} login - Still developing`);
   };
 
   return (
@@ -60,13 +74,13 @@ export default function LoginForm({  }) {
 
       <div className="login-content">
         <div className="login-header">
-          <h1>Login</h1>
+          <h1>{t("Đăng nhập")}</h1>
         </div>
 
-        <form className="login-form" onSubmit={handleLogin}>
+        <form className="login-form" onSubmit={handleLogin} autoComplete="on">
           {error && (
             <div className="error-message">
-              {error}
+              {t(error)}
             </div>
           )}
 
@@ -74,11 +88,16 @@ export default function LoginForm({  }) {
             <User className="input-icon" />
             <input
               type="text"
-              placeholder="User name"
+              id="username"
+              name="username"
+              autoComplete="username"
+              placeholder={t("Tên đăng nhập hoặc email")}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="input-field"
               disabled={loading}
+              autoCapitalize="none"
+              spellCheck="false"
               required
             />
           </div>
@@ -87,6 +106,9 @@ export default function LoginForm({  }) {
             <Lock className="input-icon" />
             <input
               type="password"
+              id="password"
+              name="password"
+              autoComplete="current-password"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -104,11 +126,8 @@ export default function LoginForm({  }) {
                 onChange={(e) => setRememberMe(e.target.checked)}
                 disabled={loading}
               />
-              <span>Remember me</span>
+              <span>{t("Ghi nhớ đăng nhập")}</span>
             </label>
-            <a href="#" className="forgot-password">
-              Forgot Password?
-            </a>
           </div>
 
           <button 
@@ -116,11 +135,11 @@ export default function LoginForm({  }) {
             className="login-button"
             disabled={loading}
           >
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? t("Đang đăng nhập…") : t("Đăng nhập")}
           </button>
 
           <div className="divider">
-            <div className="divider-circle">or</div>
+            <div className="divider-circle">{t("hoặc")}</div>
           </div>
 
           <div className="social-buttons">
@@ -136,11 +155,8 @@ export default function LoginForm({  }) {
         </form>
 
         <div className="login-footer">
-          <p>
-            Do not have an account?{' '}
-          <Link to="/register" style={{ color: '#ffffff', fontWeight: '500', textDecoration: 'none' }}>
-              Register
-            </Link>
+          <p>{t("Chưa có tài khoản?")}{' '}
+          <Link to="/register" style={{ color: '#ffffff', fontWeight: '500', textDecoration: 'none' }}>{t("Đăng ký")}</Link>
           </p>
         </div>
       </div>

@@ -10,6 +10,8 @@
  * một ngôn ngữ: user chọn 🙂 thì điểm cũng nên ra "Tốt", không phải một con số lạ.
  */
 
+import { translate as t } from '../lib/locale';
+
 const BANDS = [
   { min: 85, emoji: '🔥', label: 'Rất tập trung', className: 'excellent' },
   { min: 70, emoji: '🙂', label: 'Tốt', className: 'good' },
@@ -39,7 +41,7 @@ export function deltaPhrase(delta) {
 
   const size = Math.abs(delta);
   if (size < 3) {
-    return { text: 'ngang phiên trước', direction: 'flat' };
+    return { text: t('ngang phiên trước'), direction: 'flat' };
   }
 
   const up = delta > 0;
@@ -49,7 +51,7 @@ export function deltaPhrase(delta) {
   else magnitude = 'hẳn';
 
   return {
-    text: `${up ? 'tốt hơn' : 'kém hơn'} phiên trước ${magnitude}`,
+    text: t('{0} phiên trước {1}', [up ? 'tốt hơn' : 'kém hơn', magnitude]),
     direction: up ? 'up' : 'down',
   };
 }

@@ -1,8 +1,11 @@
+import { useLanguage } from '../../hooks/useLanguage';
+import { translate as t } from '../../lib/locale';
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import './ReflectionModal.css';
 import { reflectionAPI } from '../../api/reflection';
 import { adviceIcon } from '../../utils/adviceIcon';
 import { SCORE_EXPLAINER, deltaPhrase, scoreBand } from '../../utils/scoreLabel';
+import { captureEvent } from '../../lib/analytics';
 
 const FOCUS_LEVELS = [
   { value: 1, emoji: '😫', label: 'Rất kém' },
@@ -42,8 +45,9 @@ const COUNTDOWN_SECONDS = 15;
  *  - onClose:   đóng popup
  */
 export default function ReflectionModal({
-  sessionId, subject, onAdoptSubject, onApplyPlan, onClose,
+  sessionId, subject, onAdoptSubject, onApplyPlan, onClose, onGiveFeedback,
 }) {
+  const { language } = useLanguage();
   // step: 'questions' → 'loading' → 'feedback'
   const [step, setStep] = useState('questions');
   const [completionPercent, setCompletionPercent] = useState(70);
@@ -60,6 +64,19 @@ export default function ReflectionModal({
   const [subjectAdopted, setSubjectAdopted] = useState(false);
   const [showScoreHelp, setShowScoreHelp] = useState(false);
   const [planApplied, setPlanApplied] = useState(false);
+  const viewedRef = useRef(null);
+
+  useEffect(() => {
+    const recordVisibleResult = () => {
+      if (!document.hidden && step === 'feedback' && feedback?.id && viewedRef.current !== feedback.id) {
+        viewedRef.current = feedback.id;
+        captureEvent('ai_reflection_viewed', { reflection_id: String(feedback.id), source: feedback.source || 'unavailable' });
+      }
+    };
+    recordVisibleResult();
+    document.addEventListener('visibilitychange', recordVisibleResult);
+    return () => document.removeEventListener('visibilitychange', recordVisibleResult);
+  }, [step, feedback]);
 
   // Bộ đếm chỉ phụ thuộc vào `step`. Handler và lựa chọn hiện tại đi qua ref để việc user
   // đổi slider/emoji không reset lại đồng hồ 15 giây.
@@ -74,6 +91,7 @@ export default function ReflectionModal({
     try {
       const result = await reflectionAPI.createReflection({
         sessionId,
+        language,
         completionPercent,
         focusLevel,
         energyLevel: energyLevel || null,
@@ -90,10 +108,10 @@ export default function ReflectionModal({
         setStep('feedback');
         return;
       }
-      setError(err.message || 'Có lỗi xảy ra, vui lòng thử lại.');
+      setError(err.message || t("Có lỗi xảy ra, vui lòng thử lại."));
       setStep('questions');
     }
-  }, [sessionId, completionPercent, focusLevel, energyLevel, distraction, subject, step]);
+  }, [sessionId, completionPercent, focusLevel, energyLevel, distraction, subject, step, language]);
 
   useEffect(() => {
     submitRef.current = handleSubmit;
@@ -101,14 +119,20 @@ export default function ReflectionModal({
     focusLevelRef.current = focusLevel;
   }, [handleSubmit, onClose, focusLevel]);
 
-  // Bộ đếm 15 giây, chỉ chạy ở bước trả lời câu hỏi
+  // Chỉ tính 15 giây khi người dùng đang nhìn thấy khảo sát. Nếu phiên kết thúc ở tab
+  // nền, khảo sát sẽ chờ nguyên vẹn đến lúc họ quay lại thay vì tự đóng mà họ không biết.
   useEffect(() => {
     if (step !== 'questions') return undefined;
 
-    const interval = setInterval(() => {
+    let interval;
+    const stopCountdown = () => clearInterval(interval);
+    const startCountdown = () => {
+      stopCountdown();
+      if (document.hidden) return;
+      interval = setInterval(() => {
       setSecondsLeft((prev) => {
         if (prev > 1) return prev - 1;
-        clearInterval(interval);
+        stopCountdown();
         // Đã chọn đủ thì gửi luôn, chưa chọn gì thì đóng — không chặn màn hình user
         if (focusLevelRef.current > 0) {
           submitRef.current?.();
@@ -117,9 +141,16 @@ export default function ReflectionModal({
         }
         return 0;
       });
-    }, 1000);
+      }, 1000);
+    };
 
-    return () => clearInterval(interval);
+    startCountdown();
+    document.addEventListener('visibilitychange', startCountdown);
+
+    return () => {
+      stopCountdown();
+      document.removeEventListener('visibilitychange', startCountdown);
+    };
   }, [step]);
 
   const countdownPercent = Math.round((secondsLeft / COUNTDOWN_SECONDS) * 100);
@@ -142,9 +173,9 @@ export default function ReflectionModal({
     (d) => d.id !== 'none' && feedback?.distractionReasons?.includes(d.id)
   );
   if (mainDistraction) {
-    causes.push({ icon: mainDistraction.label.split(' ')[0], text: `${mainDistraction.label.split(' ').slice(1).join(' ')} là thứ kéo bạn ra khỏi phiên này` });
+    causes.push({ icon: mainDistraction.label.split(' ')[0], text: t("{0} là thứ kéo bạn ra khỏi phiên này", [mainDistraction.label.split(' ').slice(1).join(' ')]) });
   } else if (feedback?.energyLevel != null && feedback.energyLevel <= 2) {
-    causes.push({ icon: '🔋', text: 'Bạn kết thúc phiên trong tình trạng cạn năng lượng' });
+    causes.push({ icon: '🔋', text: t("Bạn kết thúc phiên trong tình trạng cạn năng lượng") });
   }
 
   // "Đang thấy ở bạn" — quy luật dài hơi, thứ khiến user quay lại chứ không phải điểm phiên này
@@ -155,7 +186,7 @@ export default function ReflectionModal({
   if (plan?.timingVerdict === 'POOR' && plan.betterWindowLabel) {
     strategy.push({
       icon: '🌟',
-      text: `Bạn học ${plan.betterWindowLabel} hiệu quả hơn khung giờ vừa rồi`,
+      text: t("Bạn học {0} hiệu quả hơn khung giờ vừa rồi", [plan.betterWindowLabel]),
     });
   }
 
@@ -167,24 +198,21 @@ export default function ReflectionModal({
   return (
     <div className="reflection-backdrop" role="dialog" aria-modal="true">
       <div className="reflection-modal">
-        <button className="reflection-close" onClick={onClose} aria-label="Đóng">✕</button>
+        <button className="reflection-close" onClick={onClose} aria-label={t("Đóng")}>✕</button>
 
         {step === 'questions' && (
           <>
-            <h2 className="reflection-title">Hoàn thành phiên học! 🎉</h2>
-            <p className="reflection-subtitle">
-              15 giây để AI hiểu phiên học của bạn — còn {secondsLeft}s
+            <h2 className="reflection-title">{t("Hoàn thành phiên học! 🎉")}</h2>
+            <p className="reflection-subtitle">{t("15 giây để AI hiểu phiên học của bạn — còn")}{secondsLeft}s
             </p>
             <div className="reflection-countdown" aria-hidden="true">
               <div className="reflection-countdown-bar" style={{ width: `${countdownPercent}%` }} />
             </div>
 
-            {error && <div className="reflection-error">{error}</div>}
+            {error && <div className="reflection-error">{t(error)}</div>}
 
             <div className="reflection-question">
-              <label htmlFor="reflection-completion">
-                Bạn hoàn thành bao nhiêu % mục tiêu?
-              </label>
+              <label htmlFor="reflection-completion">{t("Bạn hoàn thành bao nhiêu % mục tiêu?")}</label>
               <div className="reflection-slider-row">
                 <input
                   id="reflection-completion"
@@ -200,8 +228,8 @@ export default function ReflectionModal({
             </div>
 
             <div className="reflection-question">
-              <span className="reflection-label">Mức độ tập trung của bạn?</span>
-              <div className="reflection-emoji-row" role="radiogroup" aria-label="Mức độ tập trung">
+              <span className="reflection-label">{t("Mức độ tập trung của bạn?")}</span>
+              <div className="reflection-emoji-row" role="radiogroup" aria-label={t("Mức độ tập trung")}>
                 {FOCUS_LEVELS.map(({ value, emoji, label }) => (
                   <button
                     key={value}
@@ -210,7 +238,7 @@ export default function ReflectionModal({
                     aria-checked={focusLevel === value}
                     className={`reflection-emoji ${focusLevel === value ? 'selected' : ''}`}
                     onClick={() => setFocusLevel(value)}
-                    title={label}
+                    title={t(label)}
                   >
                     {emoji}
                   </button>
@@ -219,8 +247,8 @@ export default function ReflectionModal({
             </div>
 
             <div className="reflection-question">
-              <span className="reflection-label">Năng lượng còn lại của bạn?</span>
-              <div className="reflection-energy-row" role="radiogroup" aria-label="Mức năng lượng">
+              <span className="reflection-label">{t("Năng lượng còn lại của bạn?")}</span>
+              <div className="reflection-energy-row" role="radiogroup" aria-label={t("Mức năng lượng")}>
                 {[1, 2, 3, 4, 5].map((value) => (
                   <button
                     key={value}
@@ -238,8 +266,8 @@ export default function ReflectionModal({
             </div>
 
             <div className="reflection-question">
-              <span className="reflection-label">Tác nhân xao nhãng chính?</span>
-              <div className="reflection-chips" role="radiogroup" aria-label="Tác nhân xao nhãng">
+              <span className="reflection-label">{t("Tác nhân xao nhãng chính?")}</span>
+              <div className="reflection-chips" role="radiogroup" aria-label={t("Tác nhân xao nhãng")}>
                 {DISTRACTIONS.map(({ id, label }) => (
                   <button
                     key={id}
@@ -249,22 +277,20 @@ export default function ReflectionModal({
                     className={`reflection-chip ${distraction === id ? 'selected' : ''}`}
                     onClick={() => setDistraction((prev) => (prev === id ? null : id))}
                   >
-                    {label}
+                    {t(label)}
                   </button>
                 ))}
               </div>
             </div>
 
             <div className="reflection-actions">
-              <button className="reflection-skip" onClick={onClose}>Bỏ qua</button>
+              <button className="reflection-skip" onClick={onClose}>{t("Bỏ qua")}</button>
               <button
                 className="reflection-submit"
                 onClick={handleSubmit}
                 disabled={focusLevel === 0}
-                title={focusLevel === 0 ? 'Chọn mức độ tập trung trước' : ''}
-              >
-                Xem kết quả
-              </button>
+                title={focusLevel === 0 ? t("Chọn mức độ tập trung trước") : ''}
+              >{t("Xem kết quả")}</button>
             </div>
           </>
         )}
@@ -272,7 +298,7 @@ export default function ReflectionModal({
         {step === 'loading' && (
           <div className="reflection-loading">
             <div className="reflection-spinner" aria-hidden="true" />
-            <p>Đang phân tích phiên học của bạn…</p>
+            <p>{t("Đang phân tích phiên học của bạn…")}</p>
           </div>
         )}
 
@@ -282,33 +308,32 @@ export default function ReflectionModal({
                 "tốt hay tệ" — đó là việc của app. Con số vẫn giữ vì mọi phần khác dựa vào nó. */}
             <div className={`reflection-score ${band.className}`}>
               <span className="reflection-score-emoji" aria-hidden="true">{band.emoji}</span>
-              <span className="reflection-score-band">{band.label}</span>
+              <span className="reflection-score-band">{t(band.label)}</span>
               {delta && (
-                <span className={`reflection-delta ${delta.direction}`}>{delta.text}</span>
+                <span className={`reflection-delta ${delta.direction}`}>{t(delta.text)}</span>
               )}
               <button
                 type="button"
                 className="reflection-score-meta"
                 onClick={() => setShowScoreHelp((v) => !v)}
                 aria-expanded={showScoreHelp}
-                title="Điểm này tính kiểu gì?"
+                title={t("Điểm này tính kiểu gì?")}
               >
                 {Math.round(feedback.focusScore ?? 0)}/100
-                {reward?.sessionNumber ? ` · phiên #${reward.sessionNumber}` : ''} ⓘ
+                {reward?.sessionNumber ? t(" · phiên #{0}", [reward.sessionNumber]) : ''} ⓘ
               </button>
-              {showScoreHelp && <p className="reflection-score-help">{SCORE_EXPLAINER}</p>}
+              {showScoreHelp && <p className="reflection-score-help">{t(SCORE_EXPLAINER)}</p>}
             </div>
 
             {/* Huy hiệu chỉ còn icon + một hai chữ: dòng này để liếc, không để đọc */}
             <div className="reflection-badges">
-              {reward?.personalBest && <span className="reflection-badge best">⭐ Kỷ lục</span>}
+              {reward?.personalBest && <span className="reflection-badge best">{t("⭐ Kỷ lục")}</span>}
               {reward?.currentStreakDays > 1 && (
-                <span className="reflection-badge streak">🔥 {reward.currentStreakDays} ngày</span>
+                <span className="reflection-badge streak">🔥 {reward.currentStreakDays}{t("ngày")}</span>
               )}
               {reward?.predictedFocusScore != null && (
-                <span className="reflection-badge predict" title="Điểm AI đoán trước khi bạn học">
-                  🔮 đoán {Math.round(reward.predictedFocusScore)}
-                  {' · lệch '}{Math.round(reward.predictionErrorPoints ?? 0)}
+                <span className="reflection-badge predict" title={t("Điểm AI đoán trước khi bạn học")}>{t("🔮 đoán")}{Math.round(reward.predictedFocusScore)}
+                  {t(" · lệch ")}{Math.round(reward.predictionErrorPoints ?? 0)}
                 </span>
               )}
             </div>
@@ -316,16 +341,14 @@ export default function ReflectionModal({
             {quotaNotice && <div className="reflection-error">{quotaNotice}</div>}
 
             {!quotaNotice && !feedback.aiAvailable && (
-              <p className="reflection-unavailable">
-                ⚙️ AI đang bận — điểm và phát hiện vẫn được tính đầy đủ.
-              </p>
+              <p className="reflection-unavailable">{t("⚙️ AI đang bận — điểm và phát hiện vẫn được tính đầy đủ.")}</p>
             )}
 
             {/* Điều AI đọc được từ ghi chú: nguồn dữ liệu duy nhất không phải lời tự khai */}
             {noteInsight && (
               <div className={`reflection-note-insight ${noteInsight.verdict.toLowerCase()}`}>
                 <span className="reflection-note-icon" aria-hidden="true">{noteInsight.icon}</span>
-                <span className="reflection-note-text">{noteInsight.message}</span>
+                <span className="reflection-note-text">{t(noteInsight.message)}</span>
                 {noteInsight.detectedSubject && onAdoptSubject && (
                   <button
                     type="button"
@@ -336,7 +359,7 @@ export default function ReflectionModal({
                     }}
                     disabled={subjectAdopted}
                   >
-                    {subjectAdopted ? '✓' : `Dùng ${noteInsight.detectedSubject}`}
+                    {subjectAdopted ? '✓' : t("Dùng {0}", [noteInsight.detectedSubject])}
                   </button>
                 )}
               </div>
@@ -346,7 +369,7 @@ export default function ReflectionModal({
                 thì lời khuyên bên dưới trở thành mệnh lệnh không rõ lý do. */}
             {causes.length > 0 && (
               <section className="reflection-block">
-                <span className="reflection-block-label">Vì sao</span>
+                <span className="reflection-block-label">{t("Vì sao")}</span>
                 {causes.map((c) => (
                   <p key={c.text} className="reflection-line">
                     <span aria-hidden="true">{c.icon}</span> {c.text}
@@ -359,12 +382,12 @@ export default function ReflectionModal({
                 Ba con số dạng chip thay cho một câu văn: user cần biết ĐẶT BAO NHIÊU PHÚT,
                 HỌC MÔN GÌ, LÚC MẤY GIỜ — và bấm một cái là timer tự đặt xong. */}
             <section className="reflection-block plan">
-              <span className="reflection-block-label">Phiên sau</span>
+              <span className="reflection-block-label">{t("Phiên sau")}</span>
 
               {plan ? (
                 <>
                   <div className="reflection-plan-chips">
-                    <span className="reflection-plan-chip">⏱️ {plan.durationMinutes} phút</span>
+                    <span className="reflection-plan-chip">⏱️ {plan.durationMinutes}{t("phút")}</span>
                     {plan.subject && (
                       <span className="reflection-plan-chip">📚 {plan.subject}</span>
                     )}
@@ -384,10 +407,11 @@ export default function ReflectionModal({
                             subject: plan.subject,
                           });
                           setPlanApplied(true);
+                          captureEvent('ai_plan_applied', { source: 'reflection_result', reflection_id: String(feedback.id), duration_minutes: plan.durationMinutes });
                         }}
                         disabled={planApplied}
                       >
-                        {planApplied ? '✓ Đã đặt' : 'Áp dụng'}
+                        {planApplied ? t("✓ Đã đặt") : t("Áp dụng")}
                       </button>
                     )}
                   </div>
@@ -397,14 +421,14 @@ export default function ReflectionModal({
                       ba con số mà không kèm hành động thì user vẫn không biết bắt đầu từ đâu. */}
                   {action && (
                     <p className="reflection-line action">
-                      <span aria-hidden="true">{adviceIcon(action, '🛡️')}</span> {action}
+                      <span aria-hidden="true">{adviceIcon(action, '🛡️')}</span> {t(action)}
                     </p>
                   )}
                 </>
               ) : (
                 action && (
                   <p className="reflection-line action">
-                    <span aria-hidden="true">{adviceIcon(action)}</span> {action}
+                    <span aria-hidden="true">{adviceIcon(action)}</span> {t(action)}
                   </p>
                 )
               )}
@@ -414,7 +438,7 @@ export default function ReflectionModal({
                 Hiện mặc định chứ không giấu — đây là lý do user quay lại, không phải phần phụ. */}
             {(strategy.length > 0 || reward?.newDiscoveries?.length > 0) && (
               <section className="reflection-block">
-                <span className="reflection-block-label">Đang thấy ở bạn</span>
+                <span className="reflection-block-label">{t("Đang thấy ở bạn")}</span>
                 {strategy.map((line) => (
                   <p key={line.text} className="reflection-line">
                     <span aria-hidden="true">{line.icon}</span> {line.text}
@@ -423,9 +447,8 @@ export default function ReflectionModal({
                 {reward?.newDiscoveries?.length > 0 && (
                   <div className="reflection-unlocked-row">
                     {reward.newDiscoveries.map((d) => (
-                      <span key={d.id} className="reflection-unlocked-chip" title={d.detail}>
-                        {d.icon} {d.title} · mới
-                      </span>
+                      <span key={d.id} className="reflection-unlocked-chip" title={t(d.detail)}>
+                        {d.icon} {t(d.title)}{t("· mới")}</span>
                     ))}
                   </div>
                 )}
@@ -440,7 +463,7 @@ export default function ReflectionModal({
                 onClick={() => setShowDetails((v) => !v)}
                 aria-expanded={showDetails}
               >
-                {showDetails ? 'Ẩn chi tiết ▲' : 'Xem chi tiết ▼'}
+                {showDetails ? t("Ẩn chi tiết ▲") : t("Xem chi tiết ▼")}
               </button>
             )}
 
@@ -450,42 +473,38 @@ export default function ReflectionModal({
                   <div key={d.id} className="reflection-discovery">
                     <span className="reflection-discovery-icon">{d.icon}</span>
                     <div>
-                      <strong>{d.title}</strong>
-                      <p>{d.detail}</p>
+                      <strong>{t(d.title)}</strong>
+                      <p>{t(d.detail)}</p>
                       <span className="reflection-discovery-evidence">
-                        {d.evidence} · độ tin cậy {d.confidence}%
+                        {t(d.evidence)}{t("· độ tin cậy")}{d.confidence}%
                       </span>
                     </div>
                   </div>
                 ))}
 
                 {plan?.timingMessage && (
-                  <p className="reflection-detail-line">🕗 {plan.timingMessage}</p>
+                  <p className="reflection-detail-line">🕗 {t(plan.timingMessage)}</p>
                 )}
                 {reward?.coachAccuracyPercent > 0 && (
-                  <p className="reflection-detail-line muted">
-                    🎯 Độ chính xác dự đoán của AI trên hồ sơ của bạn: {reward.coachAccuracyPercent}%
+                  <p className="reflection-detail-line muted">{t("🎯 Độ chính xác dự đoán của AI trên hồ sơ của bạn:")}{reward.coachAccuracyPercent}%
                   </p>
                 )}
                 {feedback.aiCallsRemaining != null && (
-                  <p className="reflection-detail-line muted">
-                    ⚡ Còn {feedback.aiCallsRemaining} lượt phân tích AI hôm nay.
-                  </p>
+                  <p className="reflection-detail-line muted">{t("⚡ Còn")}{feedback.aiCallsRemaining}{t("lượt phân tích AI hôm nay.")}</p>
                 )}
               </div>
             )}
 
             {/* Móc kéo user quay lại: cho họ thấy chính xác cái gì đang chờ ở phiên sau */}
             {reward?.nextUnlockName && reward?.sessionsToNextUnlock > 0 && (
-              <div className="reflection-unlock">
-                🔓 Còn <strong>{reward.sessionsToNextUnlock} phiên</strong> nữa:
-                {' '}<strong>{reward.nextUnlockName}</strong>
+              <div className="reflection-unlock">{t("🔓 Còn")}<strong>{reward.sessionsToNextUnlock}{t("phiên")}</strong>{t("nữa:")}{' '}<strong>{t(reward.nextUnlockName)}</strong>
               </div>
             )}
 
             <div className="reflection-actions">
               <button className="reflection-submit" onClick={onClose}>Xong</button>
             </div>
+            {onGiveFeedback && <button type="button" className="reflection-product-feedback" onClick={() => onGiveFeedback(feedback)}>{t("Phản hồi này có giúp bạn không? Viết góp ý cho nhóm ↗")}</button>}
           </div>
         )}
       </div>

@@ -22,7 +22,7 @@ public class NoteController {
     private Long requireUserId(HttpSession session) {
         Long userId = (Long) session.getAttribute("USER_ID");
         if (userId == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthenticated");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Bạn chưa đăng nhập.");
         }
         return userId;
     }

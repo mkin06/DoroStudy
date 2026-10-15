@@ -23,7 +23,21 @@ public class ReflectionFallback {
 
     public AiAnalyzeResponse build(int completionPercent, int focusLevel,
                                    Integer energyLevel, List<String> distractionReasons) {
+        return build(completionPercent, focusLevel, energyLevel, distractionReasons, "vi");
+    }
+
+    public AiAnalyzeResponse build(int completionPercent, int focusLevel,
+                                   Integer energyLevel, List<String> distractionReasons, String language) {
         double score = focusScoreCalculator.calculate(completionPercent, focusLevel, energyLevel);
+
+        if ("en".equals(language)) {
+            String summary = String.format("Session recorded: %d%% of your goal completed, focus %d/5.", completionPercent, focusLevel);
+            boolean distracted = distractionReasons != null && distractionReasons.stream().anyMatch(reason -> !"none".equals(reason));
+            String advice = distracted ? "Before the next session, remove the distraction you reported and try a 15-minute session."
+                    : focusLevel <= 2 ? "Try a 15-minute session with one small, clear goal."
+                    : "Keep the same settings for your next session.";
+            return new AiAnalyzeResponse(summary, null, advice, score, SOURCE);
+        }
 
         String summary = String.format(
                 "Đã ghi nhận phiên học: bạn hoàn thành %d%% mục tiêu với mức tập trung %d/5.",

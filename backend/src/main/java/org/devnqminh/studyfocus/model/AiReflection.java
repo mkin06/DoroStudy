@@ -17,7 +17,8 @@ import java.util.List;
  */
 @Entity
 @Table(name = "ai_reflections",
-        uniqueConstraints = @UniqueConstraint(name = "uk_ai_reflection_session", columnNames = "session_id"))
+        uniqueConstraints = @UniqueConstraint(name = "uk_ai_reflection_session", columnNames = "session_id"),
+        indexes = @Index(name = "idx_ai_reflections_user_id_desc", columnList = "user_id, id"))
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor @Builder
 public class AiReflection {
