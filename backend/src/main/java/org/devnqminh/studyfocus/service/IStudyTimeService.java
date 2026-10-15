@@ -14,7 +14,7 @@ public interface IStudyTimeService {
 
     SessionResponse saveSession(SessionRequest request, Long userId);
 
-    List<SessionResponse> getUserSessions(Long userId);
+    List<SessionResponse> getUserSessions(Long userId, Integer days);
 
     SessionResponse getSessionById(Long id, Long userId);
 

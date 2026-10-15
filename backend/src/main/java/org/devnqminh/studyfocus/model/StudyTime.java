@@ -7,7 +7,10 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 @Entity
-@Table(name = "times")
+@Table(name = "times", indexes = {
+        @Index(name = "idx_times_user_created", columnList = "user_id, created_at"),
+        @Index(name = "idx_times_user_id_desc", columnList = "user_id, id")
+})
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor @Builder
 public class StudyTime {

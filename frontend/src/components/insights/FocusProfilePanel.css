@@ -20,7 +20,7 @@
     color: #ffffff;
     border-radius: 18px;
     width: 100%;
-    max-width: 720px;
+    max-width: 780px;
     max-height: 88vh;
     overflow-y: auto;
     padding: 28px 26px 26px;
@@ -48,12 +48,12 @@
 
 .fp-header h2 {
     margin: 0 0 4px;
-    font-size: 20px;
+    font-size: 24px;
 }
 
 .fp-header p {
     margin: 0 0 20px;
-    font-size: 13px;
+    font-size: 15px;
     color: #c3c2b7;
 }
 
@@ -169,7 +169,7 @@
 
 .fp-section h3 {
     margin: 0 0 6px;
-    font-size: 15px;
+    font-size: 18px;
 }
 
 .fp-section-head {
@@ -181,7 +181,7 @@
 
 .fp-section-note {
     margin: 0 0 12px;
-    font-size: 12px;
+    font-size: 14px;
     color: #c3c2b7;
     line-height: 1.5;
 }
@@ -319,7 +319,7 @@
 
 .fp-consistency p {
     margin: 0;
-    font-size: 12.5px;
+    font-size: 15px;
     line-height: 1.5;
     color: #c3c2b7;
 }
@@ -354,13 +354,13 @@
 
 .fp-discovery-body strong {
     display: block;
-    font-size: 13.5px;
+    font-size: 16px;
     margin-bottom: 3px;
 }
 
 .fp-discovery-body p {
     margin: 0 0 7px;
-    font-size: 12.5px;
+    font-size: 15px;
     line-height: 1.5;
 }
 
@@ -403,4 +403,29 @@
 
 .fp-unlock strong {
     color: #ffffff;
+}
+
+/* Nhật ký phản hồi: trình bày như ghi chú sau buổi học, tránh cảm giác dashboard AI. */
+.fp-history-section { margin-top: 28px; }
+.fp-history-section .fp-section-head { align-items: flex-start; }
+.fp-history-section .fp-section-note { margin: 5px 0 0; }
+.fp-history-count { padding: 6px 10px; border: 1px solid rgba(255,255,255,.12); border-radius: 999px; color: #a9abb0; font-size: 12px; white-space: nowrap; }
+.fp-history-list { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.fp-history-item { overflow: hidden; border: 1px solid rgba(255,255,255,.09); border-radius: 13px; background: rgba(255,255,255,.025); }
+.fp-history-summary { display: flex; align-items: center; width: 100%; gap: 13px; padding: 14px; border: 0; background: transparent; color: #fff; text-align: left; }
+.fp-history-summary:hover { background: rgba(255,255,255,.035); }
+.fp-history-score { display: grid; place-items: center; width: 43px; height: 43px; flex: 0 0 43px; border-radius: 12px; background: #252a31; color: #9fd4b7; font-size: 17px; font-weight: 750; }
+.fp-history-copy { min-width: 0; flex: 1; }
+.fp-history-copy strong { display: block; overflow: hidden; color: #f1f1ef; font-size: 15px; font-weight: 600; line-height: 1.45; text-overflow: ellipsis; white-space: nowrap; }
+.fp-history-copy small { display: block; margin-top: 4px; color: #85878d; font-size: 12px; }
+.fp-history-chevron { color: #777a80; font-size: 20px; }
+.fp-history-detail { padding: 0 16px 16px 70px; color: #c9cacf; font-size: 15px; line-height: 1.65; }
+.fp-history-detail p { margin: 0 0 12px; }
+.fp-history-next { padding: 12px 14px; border-left: 3px solid #56a67b; border-radius: 0 9px 9px 0; background: rgba(86,166,123,.09); }
+.fp-history-next span { display: block; margin-bottom: 4px; color: #85a994; font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+.fp-history-next strong { color: #ecf2ee; font-size: 15px; font-weight: 550; }
+
+@media (max-width: 560px) {
+    .fp-history-copy strong { white-space: normal; }
+    .fp-history-detail { padding-left: 16px; }
 }

@@ -1,4 +1,6 @@
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+import { captureEvent } from '../lib/analytics';
+
+import { API_URL } from './config';
 
 async function parseError(res, fallback) {
   try {
@@ -6,12 +8,6 @@ async function parseError(res, fallback) {
     return body.message || body.error || fallback;
   } catch {
     return fallback;
-  }
-}
-
-function handleUnauthorized(res) {
-  if (res.status === 401 || res.status === 403) {
-    window.location.href = '/login';
   }
 }
 
@@ -48,20 +44,22 @@ export const reflectionAPI = {
       body: JSON.stringify(data),
     });
     if (res.status === 429) {
-      throw await quotaError(res);
+      const error = await quotaError(res);
+      if (error.reflection?.id) captureEvent('ai_reflection_submitted', { source: error.reflection.source || 'unavailable' });
+      throw error;
     }
     if (!res.ok) {
-      handleUnauthorized(res);
-      throw new Error(await parseError(res, 'Không lưu được reflection.'));
+      throw new Error(await parseError(res, 'Không lưu được phản hồi sau phiên học.'));
     }
-    return res.json();
+    const reflection = await res.json();
+    captureEvent('ai_reflection_submitted', { source: reflection.source || 'unavailable' });
+    return reflection;
   },
 
-  getReflections: async () => {
-    const res = await fetch(`${API_URL}/reflections`, { credentials: 'include' });
+  getReflections: async (limit = 50) => {
+    const res = await fetch(`${API_URL}/reflections?limit=${encodeURIComponent(limit)}`, { credentials: 'include' });
     if (!res.ok) {
-      handleUnauthorized(res);
-      throw new Error(await parseError(res, 'Không tải được danh sách reflection.'));
+      throw new Error(await parseError(res, 'Không tải được lịch sử phản hồi.'));
     }
     return res.json();
   },
@@ -71,8 +69,7 @@ export const reflectionAPI = {
       credentials: 'include',
     });
     if (!res.ok) {
-      handleUnauthorized(res);
-      throw new Error(await parseError(res, 'Không tải được reflection.'));
+      throw new Error(await parseError(res, 'Không tải được phản hồi sau phiên học.'));
     }
     return res.json();
   },
@@ -89,7 +86,6 @@ export const reflectionAPI = {
       credentials: 'include',
     });
     if (!res.ok) {
-      handleUnauthorized(res);
       throw new Error(await parseError(res, 'Không tải được kế hoạch phiên tiếp theo.'));
     }
     return res.json();
@@ -99,8 +95,7 @@ export const reflectionAPI = {
   getInsights: async () => {
     const res = await fetch(`${API_URL}/reflections/insights`, { credentials: 'include' });
     if (!res.ok) {
-      handleUnauthorized(res);
-      throw new Error(await parseError(res, 'Không tải được Meta-Learning Insights.'));
+      throw new Error(await parseError(res, 'Không tải được phân tích thói quen học.'));
     }
     return res.json();
   },

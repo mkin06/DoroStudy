@@ -1,9 +1,12 @@
+import { useLanguage } from '../../hooks/useLanguage';
+import { translate as t } from '../../lib/locale';
 import React, { useEffect, useState } from 'react';
 import { notesAPI } from '../../api/notes';
 import { useToast } from '../../contexts/ToastContext';
 import './NotesPanel.css';
 
 export default function NotesPanel({ onClose }) {
+  useLanguage();
   const toast = useToast();
   const [notes, setNotes] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,7 +30,7 @@ export default function NotesPanel({ onClose }) {
       })
       .catch(err => toast.error(err.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [toast]);
 
   const filteredNotes = notes.filter((note) => {
     const keyword = searchTerm.trim().toLowerCase();
@@ -45,13 +48,13 @@ export default function NotesPanel({ onClose }) {
         const updated = await notesAPI.updateNote(editingId, { title, content });
         setNotes(prev => prev.map(n => n.id === editingId ? updated : n));
         setActiveId(updated.id);
-        toast.success('Note updated!');
+        toast.success(t("Đã cập nhật ghi chú."));
       } else {
         const created = await notesAPI.createNote({ title, content });
         setNotes(prev => [created, ...prev]);
         setEditingId(created.id);
         setActiveId(created.id);
-        toast.success('Note created!');
+        toast.success(t("Đã tạo ghi chú."));
       }
     } catch (err) {
       toast.error(err.message);
@@ -68,7 +71,7 @@ export default function NotesPanel({ onClose }) {
   const handleCreateDraft = () => {
     setActiveId(null);
     setEditingId(null);
-    setTitle('Untitled');
+    setTitle(t("Chưa đặt tên"));
     setContent('');
   };
 
@@ -93,7 +96,7 @@ export default function NotesPanel({ onClose }) {
         }
       }
 
-      toast.success('Note deleted!');
+      toast.success(t("Đã xóa ghi chú."));
     } catch (err) {
       toast.error(err.message);
     }
@@ -111,14 +114,14 @@ export default function NotesPanel({ onClose }) {
       <div className="notes-panel" onClick={e => e.stopPropagation()}>
         <aside className="notes-sidebar">
           <div className="notes-sidebar-head">
-            <h2 className="notes-heading">Notes <span>({filteredNotes.length})</span></h2>
-            <button className="notes-new-btn" onClick={handleCreateDraft} title="Create new note">+</button>
+            <h2 className="notes-heading">{t("Ghi chú")}<span>({filteredNotes.length})</span></h2>
+            <button className="notes-new-btn" onClick={handleCreateDraft} title={t("Tạo ghi chú mới")}>+</button>
           </div>
 
           <div className="notes-list">
-            {loading && <p className="notes-empty">Loading...</p>}
+            {loading && <p className="notes-empty">{t("Đang tải…")}</p>}
             {!loading && filteredNotes.length === 0 && (
-              <p className="notes-empty">No notes found.</p>
+              <p className="notes-empty">{t("Chưa có ghi chú nào.")}</p>
             )}
             {filteredNotes.map(note => (
               <button
@@ -128,7 +131,7 @@ export default function NotesPanel({ onClose }) {
                 onClick={() => handleSelectNote(note)}
               >
                 <p className="note-title">{note.title}</p>
-                <p className="note-time">Saved note</p>
+                <p className="note-time">{t("Đã lưu")}</p>
                 {note.content && <p className="note-content">{note.content}</p>}
               </button>
             ))}
@@ -140,7 +143,7 @@ export default function NotesPanel({ onClose }) {
             <input
               className="notes-search"
               type="text"
-              placeholder="Search..."
+              placeholder={t("Tìm ghi chú…")}
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
             />
@@ -149,34 +152,32 @@ export default function NotesPanel({ onClose }) {
               className="notes-delete-top"
               onClick={() => editingId && handleDelete(editingId)}
               disabled={!editingId}
-              title="Delete selected note"
-            >
-              Delete
-            </button>
+              title={t("Xóa ghi chú đang chọn")}
+            >{t("Xóa")}</button>
             <button className="notes-close-btn" onClick={onClose}>X</button>
           </div>
 
           <form className="notes-form" onSubmit={handleSubmit}>
             <div className="notes-toolbar" aria-hidden="true">
-              <span>Normal</span>
+              <span>{t("Văn bản")}</span>
               <span>B</span>
               <span>I</span>
               <span>U</span>
-              <span>List</span>
-              <span>Link</span>
+              <span>{t("Danh sách")}</span>
+              <span>{t("Liên kết")}</span>
             </div>
 
             <input
               className="notes-title-input"
               type="text"
-              placeholder="Untitled"
+              placeholder={t("Tiêu đề ghi chú")}
               value={title}
               onChange={e => setTitle(e.target.value)}
               maxLength={200}
             />
             <textarea
               className="notes-content-input"
-              placeholder="Write your note..."
+              placeholder={t("Viết ghi chú của bạn…")}
               value={content}
               onChange={e => setContent(e.target.value)}
               rows={14}
@@ -184,12 +185,10 @@ export default function NotesPanel({ onClose }) {
 
             <div className="notes-form-actions">
               {(editingId || title || content) && (
-                <button type="button" className="notes-cancel-btn" onClick={handleCancel}>
-                  Clear
-                </button>
+                <button type="button" className="notes-cancel-btn" onClick={handleCancel}>{t("Xóa nội dung")}</button>
               )}
               <button type="submit" className="notes-submit-btn" disabled={!title.trim()}>
-                {editingId ? 'Save' : 'Add Note'}
+                {editingId ? t("Lưu") : t("Thêm ghi chú")}
               </button>
             </div>
           </form>

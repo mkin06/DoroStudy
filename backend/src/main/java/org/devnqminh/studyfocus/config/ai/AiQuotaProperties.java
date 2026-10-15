@@ -24,7 +24,7 @@ import java.util.Map;
  *
  * Mọi con số đều đọc từ application.properties, không hardcode:
  *
- *   ai.quota.limits.FREE=3
+ *   ai.quota.limits.FREE=15
  *   ai.quota.limits.PREMIUM=50
  *   ai.quota.plans.FREE.subject-insight-limit=1
  *   ai.quota.plans.FREE.history-days=30

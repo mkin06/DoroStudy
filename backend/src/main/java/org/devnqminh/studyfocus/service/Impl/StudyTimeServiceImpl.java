@@ -10,17 +10,20 @@ import org.devnqminh.studyfocus.model.User;
 import org.devnqminh.studyfocus.repository.StudyTimeRepository;
 import org.devnqminh.studyfocus.repository.UserRepository;
 import org.devnqminh.studyfocus.service.IStudyTimeService;
+import org.devnqminh.studyfocus.service.ai.FocusProfileService;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.sql.Date;
 import java.time.LocalDate;
+import java.time.DayOfWeek;
+import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.time.ZoneId;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -29,6 +32,7 @@ import java.util.stream.Collectors;
 public class StudyTimeServiceImpl  implements IStudyTimeService {
     private final StudyTimeRepository studyTimeRepository;
     private final UserRepository userRepository;
+    private final FocusProfileService focusProfileService;
     private static final ZoneId STREAK_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
     /**
@@ -58,11 +62,13 @@ public class StudyTimeServiceImpl  implements IStudyTimeService {
      * Lấy tất cả sessions của user
      */
     @Override
-    public List<SessionResponse> getUserSessions(Long userId) {
-        List<StudyTime> sessions = studyTimeRepository.findByUserIdOrderByIdDesc(userId);
-        return sessions.stream()
-                .map(this::toSessionResponse)
-                .collect(Collectors.toList());
+    public List<SessionResponse> getUserSessions(Long userId, Integer days) {
+        Instant since = null;
+        if (days != null) {
+            int safeDays = Math.max(1, Math.min(days, 3660));
+            since = Instant.now().minus(java.time.Duration.ofDays(safeDays));
+        }
+        return studyTimeRepository.findSessionResponses(userId, since);
     }
 
     @Override
@@ -89,6 +95,7 @@ public class StudyTimeServiceImpl  implements IStudyTimeService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Session does not belong to this user");
         }
         studyTimeRepository.delete(session);
+        focusProfileService.invalidate(userId);
     }
 
 
@@ -97,9 +104,14 @@ public class StudyTimeServiceImpl  implements IStudyTimeService {
      */
     @Override
     public StatsResponse getUserStats(Long userId) {
-        Double totalTime = studyTimeRepository.getTotalStudyTimeByUserId(userId);
-        Long totalSessions = studyTimeRepository.countByUserId(userId);
-        Integer totalPomodoros = studyTimeRepository.getTotalPomodorosByUserId(userId);
+        ZonedDateTime now = ZonedDateTime.now(STREAK_ZONE);
+        ZonedDateTime weekStart = now.toLocalDate()
+                .with(DayOfWeek.MONDAY).atStartOfDay(STREAK_ZONE);
+        StudyTimeRepository.StatsAggregate aggregate = studyTimeRepository.getStatsAggregate(
+                userId, weekStart.toInstant(), weekStart.plusWeeks(1).toInstant());
+        Double totalTime = aggregate.getTotalStudyTime().doubleValue();
+        Long totalSessions = aggregate.getTotalSessions().longValue();
+        Integer totalPomodoros = aggregate.getTotalPomodoros().intValue();
         //tinh trung binh
         Double avgDuration = totalSessions > 0 ? (totalTime / totalSessions) : 0.0;
         
@@ -110,9 +122,7 @@ public class StudyTimeServiceImpl  implements IStudyTimeService {
         //tính chuỗi
         StreakResult streak = calculateStreak(activeDays, LocalDate.now(STREAK_ZONE));
         // tính pomodoros tuần này
-        Integer thisWeekPomodoros = Optional
-            .ofNullable(studyTimeRepository.getThisWeekPomodorosByUserId(userId))
-            .orElse(0);
+        Integer thisWeekPomodoros = aggregate.getThisWeekPomodoros().intValue();
         return new StatsResponse(
                 totalTime,
                 totalSessions,
@@ -193,6 +203,8 @@ public class StudyTimeServiceImpl  implements IStudyTimeService {
                 studyTime.getBreakTime(),
                 studyTime.getCount(),
                 studyTime.getSubject(),
+                studyTime.getStartTime(),
+                studyTime.getCreatedAt(),
                 studyTime.getUser().getId(),
                 studyTime.getUser().getName()
         );

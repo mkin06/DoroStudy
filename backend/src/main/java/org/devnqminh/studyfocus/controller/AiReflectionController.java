@@ -24,7 +24,7 @@ public class AiReflectionController {
     private Long requireUserId(HttpSession session) {
         Long userId = (Long) session.getAttribute("USER_ID");
         if (userId == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthenticated");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Bạn chưa đăng nhập.");
         }
         return userId;
     }
@@ -48,9 +48,11 @@ public class AiReflectionController {
      * GET /api/reflections
      */
     @GetMapping
-    public List<ReflectionResponse> getUserReflections(HttpSession session) {
+    public List<ReflectionResponse> getUserReflections(
+            @RequestParam(value = "limit", defaultValue = "50") int limit,
+            HttpSession session) {
         Long userId = requireUserId(session);
-        return aiReflectionService.getUserReflections(userId);
+        return aiReflectionService.getUserReflections(userId, Math.max(1, Math.min(limit, 100)));
     }
 
     /**

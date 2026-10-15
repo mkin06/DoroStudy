@@ -1,11 +1,15 @@
 package org.devnqminh.studyfocus.dto.response;
 
+import java.time.Instant;
+
 public record SessionResponse(
         Long id,
         Double duration,
         Double breakTime,
         Integer count,
         String subject,
+        Instant startTime,
+        Instant createdAt,
         Long userId,
         String username
 ) {

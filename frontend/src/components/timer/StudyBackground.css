@@ -1,0 +1,12 @@
+.study-background { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: #151c24; isolation: isolate; }
+.study-background-image, .study-background-video { position: absolute; inset: 0; width: 100%; height: 100%; background-size: cover; background-position: center; object-fit: cover; }
+.study-background-youtube { position: absolute; top: 50%; left: 50%; width: 100vw; height: 56.25vw; min-height: 100vh; min-width: 177.78vh; transform: translate(-50%, -50%); border: 0; background: #151c24; }
+.study-background-shade { position: absolute; inset: 0; z-index: 3; }
+.study-rain, .study-snow, .study-lightning { position: absolute; inset: 0; z-index: 2; overflow: hidden; }
+.study-rain i { position: absolute; top: -50px; width: 1.5px; height: 40px; background: linear-gradient(transparent, #ffffffd9); animation: study-rainfall linear infinite; }
+@keyframes study-rainfall { from { transform: translateY(0) rotate(15deg); } to { transform: translateY(calc(100vh + 60px)) rotate(15deg); } }
+.study-snow i { position: absolute; top: -10px; border-radius: 50%; background: #fff; animation: study-snowfall linear infinite; }
+@keyframes study-snowfall { 0% { transform: translateY(0) translateX(0); } 50% { transform: translateY(50vh) translateX(20px); } 100% { transform: translateY(calc(100vh + 20px)) translateX(-20px); } }
+.study-lightning { background: #fff; opacity: 0; animation: study-flash 10s infinite; }
+@keyframes study-flash { 0%, 95%, 98%, 100% { opacity: 0; } 96%, 99% { opacity: .6; } 97% { opacity: .1; } }
+@media (prefers-reduced-motion: reduce) { .study-background i, .study-lightning { animation: none; } }

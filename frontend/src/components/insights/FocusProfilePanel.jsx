@@ -1,3 +1,5 @@
+import { useLanguage } from '../../hooks/useLanguage';
+import { translate as t } from '../../lib/locale';
 import React, { useEffect, useMemo, useState } from 'react';
 import './FocusProfilePanel.css';
 import { reflectionAPI } from '../../api/reflection';
@@ -35,20 +37,25 @@ function inkFor(score) {
 }
 
 export default function FocusProfilePanel({ onClose }) {
+  useLanguage();
   const [profile, setProfile] = useState(null);
+  const [reflections, setReflections] = useState([]);
+  const [openReflection, setOpenReflection] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showTable, setShowTable] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    reflectionAPI
-      .getInsights()
-      .then((data) => {
-        if (!cancelled) setProfile(data);
+    Promise.all([reflectionAPI.getInsights(), reflectionAPI.getReflections(10).catch(() => [])])
+      .then(([data, history]) => {
+        if (!cancelled) {
+          setProfile(data);
+          setReflections(Array.isArray(history) ? history : []);
+        }
       })
       .catch((err) => {
-        if (!cancelled) setError(err.message || 'Không tải được hồ sơ tập trung.');
+        if (!cancelled) setError(err.message || t("Không tải được hồ sơ tập trung."));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -75,24 +82,24 @@ export default function FocusProfilePanel({ onClose }) {
   }, [profile]);
 
   return (
-    <div className="fp-backdrop" role="dialog" aria-modal="true" aria-label="Hồ sơ tập trung">
+    <div className="fp-backdrop" role="dialog" aria-modal="true" aria-label={t("Hồ sơ tập trung")}>
       <div className="fp-panel">
-        <button className="fp-close" onClick={onClose} aria-label="Đóng">✕</button>
+        <button className="fp-close" onClick={onClose} aria-label={t("Đóng")}>✕</button>
 
         <header className="fp-header">
-          <h2>🧬 Focus DNA</h2>
-          <p>Hồ sơ tập trung riêng của bạn, dựng từ chính các phiên bạn đã học.</p>
+          <h2>{t("🧬 Hồ sơ tập trung")}</h2>
+          <p>{t("Hồ sơ tập trung riêng của bạn, dựng từ chính các phiên bạn đã học.")}</p>
         </header>
 
-        {loading && <div className="fp-loading">Đang dựng hồ sơ…</div>}
-        {error && <div className="fp-error">{error}</div>}
+        {loading && <div className="fp-loading">{t("Đang dựng hồ sơ…")}</div>}
+        {error && <div className="fp-error">{t(error)}</div>}
 
         {profile && !loading && (
           <>
             {profile.totalSessions === 0 ? (
               <div className="fp-empty">
                 <span className="fp-empty-icon">🌱</span>
-                <p>{profile.consistency?.message}</p>
+                <p>{t(profile.consistency?.message)}</p>
               </div>
             ) : (
               <>
@@ -104,12 +111,11 @@ export default function FocusProfilePanel({ onClose }) {
                   </div>
                   <div className="fp-hero-meta">
                     <span className="fp-hero-label">
-                      {scoreBand(profile.averageFocusScore).emoji}{' '}
-                      Trung bình: {scoreBand(profile.averageFocusScore).label}
+                      {scoreBand(profile.averageFocusScore).emoji}{' '}{t("Trung bình:")}{scoreBand(profile.averageFocusScore).label}
                     </span>
                     <span className="fp-hero-sub">
-                      {profile.totalSessions} phiên · cao nhất {Math.round(profile.bestFocusScore ?? 0)}
-                      {' · '}{profile.tierName}
+                      {profile.totalSessions}{t("phiên · cao nhất")}{Math.round(profile.bestFocusScore ?? 0)}
+                      {' · '}{t(profile.tierName)}
                     </span>
                   </div>
                 </section>
@@ -118,24 +124,23 @@ export default function FocusProfilePanel({ onClose }) {
                 <section className="fp-tiles">
                   <div className="fp-tile">
                     <span className="fp-tile-icon">🔥</span>
-                    <strong>{profile.consistency?.currentStreakDays ?? 0} ngày</strong>
-                    <span className="fp-tile-label">
-                      Chuỗi hiện tại · kỷ lục {profile.consistency?.bestStreakDays ?? 0}
+                    <strong>{profile.consistency?.currentStreakDays ?? 0}{t("ngày")}</strong>
+                    <span className="fp-tile-label">{t("Chuỗi hiện tại · kỷ lục")}{profile.consistency?.bestStreakDays ?? 0}
                     </span>
                   </div>
                   <div className="fp-tile">
                     <span className="fp-tile-icon">⏱️</span>
                     <strong>
-                      {profile.suggestedDurationMinutes ? `${profile.suggestedDurationMinutes} phút` : '—'}
+                      {profile.suggestedDurationMinutes ? t("{0} phút", [profile.suggestedDurationMinutes]) : '—'}
                     </strong>
-                    <span className="fp-tile-label">Độ dài phiên phù hợp nhất</span>
+                    <span className="fp-tile-label">{t("Độ dài phiên phù hợp nhất")}</span>
                   </div>
                   <div className="fp-tile">
                     <span className="fp-tile-icon">🔋</span>
                     <strong>
-                      {profile.energyDropAfterMinutes ? `${profile.energyDropAfterMinutes} phút` : '—'}
+                      {profile.energyDropAfterMinutes ? t("{0} phút", [profile.energyDropAfterMinutes]) : '—'}
                     </strong>
-                    <span className="fp-tile-label">Ngưỡng cạn năng lượng</span>
+                    <span className="fp-tile-label">{t("Ngưỡng cạn năng lượng")}</span>
                   </div>
                 </section>
 
@@ -143,27 +148,24 @@ export default function FocusProfilePanel({ onClose }) {
                 {grid && (
                   <section className="fp-section">
                     <div className="fp-section-head">
-                      <h3>🗺️ Bản đồ giờ vàng</h3>
+                      <h3>{t("🗺️ Bản đồ giờ vàng")}</h3>
                       <button
                         className="fp-toggle"
                         onClick={() => setShowTable((v) => !v)}
                         aria-pressed={showTable}
                       >
-                        {showTable ? 'Xem bản đồ' : 'Xem dạng bảng'}
+                        {showTable ? t("Xem bản đồ") : t("Xem dạng bảng")}
                       </button>
                     </div>
-                    <p className="fp-section-note">
-                      Điểm trung bình của từng môn theo buổi. Ô càng sáng càng tốt; ô trống
-                      là buổi bạn chưa từng học môn đó.
-                    </p>
+                    <p className="fp-section-note">{t("Điểm trung bình của từng môn theo buổi. Ô càng sáng càng tốt; ô trống là buổi bạn chưa từng học môn đó.")}</p>
 
                     {showTable ? (
                       <table className="fp-table">
                         <thead>
                           <tr>
-                            <th>Môn</th>
+                            <th>{t("Môn")}</th>
                             {grid.columns.map((part) => (
-                              <th key={part}>{DAY_PART_LABELS[part]}</th>
+                              <th key={part}>{t(DAY_PART_LABELS[part])}</th>
                             ))}
                           </tr>
                         </thead>
@@ -175,7 +177,7 @@ export default function FocusProfilePanel({ onClose }) {
                                 const cell = grid.byKey.get(`${subject}|${part}`);
                                 return (
                                   <td key={part}>
-                                    {cell ? `${Math.round(cell.avgScore)} (${cell.sessions} phiên)` : '—'}
+                                    {cell ? t("{0} ({1} phiên)", [Math.round(cell.avgScore), cell.sessions]) : '—'}
                                   </td>
                                 );
                               })}
@@ -190,7 +192,7 @@ export default function FocusProfilePanel({ onClose }) {
                       >
                         <div className="fp-heat-corner" />
                         {grid.columns.map((part) => (
-                          <div key={part} className="fp-heat-colhead">{DAY_PART_LABELS[part]}</div>
+                          <div key={part} className="fp-heat-colhead">{t(DAY_PART_LABELS[part])}</div>
                         ))}
 
                         {grid.subjects.map((subject) => (
@@ -200,7 +202,7 @@ export default function FocusProfilePanel({ onClose }) {
                               const cell = grid.byKey.get(`${subject}|${part}`);
                               if (!cell) {
                                 return (
-                                  <div key={part} className="fp-heat-cell empty" aria-label="Không có dữ liệu">
+                                  <div key={part} className="fp-heat-cell empty" aria-label={t("Không có dữ liệu")}>
                                     –
                                   </div>
                                 );
@@ -211,7 +213,7 @@ export default function FocusProfilePanel({ onClose }) {
                                   key={part}
                                   className="fp-heat-cell"
                                   style={{ background: rampColor(cell.avgScore), color: inkFor(cell.avgScore) }}
-                                  title={`${subject} · ${DAY_PART_LABELS[part]}: ${score} điểm, ${cell.sessions} phiên`}
+                                  title={t("{0} · {1}: {2} điểm, {3} phiên", [subject, DAY_PART_LABELS[part], score, cell.sessions])}
                                 >
                                   <span className="fp-heat-value">{score}</span>
                                   <span className="fp-heat-count">{cell.sessions}p</span>
@@ -232,7 +234,7 @@ export default function FocusProfilePanel({ onClose }) {
                       {profile.consistency.atRisk ? '⚠️' : '🔥'}
                     </span>
                     <div>
-                      <strong>{profile.consistency.atRisk ? 'Nhịp học đang thưa dần' : 'Nhịp học đang ổn'}</strong>
+                      <strong>{profile.consistency.atRisk ? t("Nhịp học đang thưa dần") : t("Nhịp học đang ổn")}</strong>
                       <p>{profile.consistency.message}</p>
                     </div>
                   </section>
@@ -241,17 +243,17 @@ export default function FocusProfilePanel({ onClose }) {
                 {/* Toàn bộ phát hiện */}
                 {profile.discoveries?.length > 0 && (
                   <section className="fp-section">
-                    <h3>✨ Những gì AI đã tìm ra về bạn</h3>
+                    <h3>{t("✨ Những gì AI đã tìm ra về bạn")}</h3>
                     <div className="fp-discoveries">
                       {profile.discoveries.map((d) => (
                         <article key={d.id} className="fp-discovery">
                           <span className="fp-discovery-icon">{d.icon}</span>
                           <div className="fp-discovery-body">
-                            <strong>{d.title}</strong>
-                            <p>{d.detail}</p>
+                            <strong>{t(d.title)}</strong>
+                            <p>{t(d.detail)}</p>
                             <div className="fp-discovery-foot">
-                              <span>{d.evidence}</span>
-                              <span className="fp-meter" title={`Độ tin cậy ${d.confidence}%`}>
+                              <span>{t(d.evidence)}</span>
+                              <span className="fp-meter" title={t("Độ tin cậy {0}%", [d.confidence])}>
                                 <span className="fp-meter-fill" style={{ width: `${d.confidence}%` }} />
                               </span>
                               <span>{d.confidence}%</span>
@@ -263,11 +265,58 @@ export default function FocusProfilePanel({ onClose }) {
                   </section>
                 )}
 
+                {reflections.length > 0 && (
+                  <section className="fp-section fp-history-section">
+                    <div className="fp-section-head">
+                      <div>
+                        <h3>{t("Nhật ký sau phiên học")}</h3>
+                        <p className="fp-section-note">{t("Những nhận xét ngắn để bạn nhìn lại cách mình đã học.")}</p>
+                      </div>
+                      <span className="fp-history-count">{reflections.length}{t("phiên")}</span>
+                    </div>
+                    <div className="fp-history-list">
+                      {reflections.slice(0, 10).map((item, index) => {
+                        const expanded = openReflection === item.id;
+                        const date = item.createdAt
+                          ? new Date(item.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: 'short' })
+                          : t("Phiên {0}", [reflections.length - index]);
+                        return (
+                          <article className="fp-history-item" key={item.id}>
+                            <button
+                              type="button"
+                              className="fp-history-summary"
+                              onClick={() => setOpenReflection(expanded ? null : item.id)}
+                              aria-expanded={expanded}
+                            >
+                              <span className="fp-history-score">{Math.round(item.focusScore ?? 0)}</span>
+                              <span className="fp-history-copy">
+                                <strong>{item.summary || t("Bạn đã hoàn thành thêm một phiên học.")}</strong>
+                                <small>{date}{t("· hoàn thành")}{item.completionPercent ?? 0}%</small>
+                              </span>
+                              <span className="fp-history-chevron">{expanded ? '−' : '+'}</span>
+                            </button>
+                            {expanded && (
+                              <div className="fp-history-detail">
+                                {item.comparison && <p>{item.comparison}</p>}
+                                {item.recommendation && (
+                                  <div className="fp-history-next">
+                                    <span>{t("Lần tới, thử cách này")}</span>
+                                    <strong>{item.recommendation}</strong>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </article>
+                        );
+                      })}
+                    </div>
+                  </section>
+                )}
+
                 {/* Mốc mở khoá kế tiếp */}
                 {profile.nextUnlockName && profile.sessionsToNextUnlock > 0 && (
-                  <section className="fp-unlock">
-                    🔓 Còn <strong>{profile.sessionsToNextUnlock} phiên</strong> nữa để mở khoá{' '}
-                    <strong>{profile.nextUnlockName}</strong>
+                  <section className="fp-unlock">{t("🔓 Còn")}<strong>{profile.sessionsToNextUnlock}{t("phiên")}</strong>{t("nữa để mở khoá")}{' '}
+                    <strong>{t(profile.nextUnlockName)}</strong>
                   </section>
                 )}
               </>

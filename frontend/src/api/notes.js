@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+import { API_URL } from './config';
 
 async function parseError(res, fallback) {
   try {
@@ -12,7 +12,7 @@ async function parseError(res, fallback) {
 export const notesAPI = {
   getNotes: async () => {
     const res = await fetch(`${API_URL}/notes`, { credentials: 'include' });
-    if (!res.ok) throw new Error(await parseError(res, 'Failed to fetch notes.'));
+    if (!res.ok) throw new Error(await parseError(res, 'Không tải được ghi chú.'));
     return res.json();
   },
 
@@ -23,7 +23,7 @@ export const notesAPI = {
       credentials: 'include',
       body: JSON.stringify(data),
     });
-    if (!res.ok) throw new Error(await parseError(res, 'Failed to create note.'));
+    if (!res.ok) throw new Error(await parseError(res, 'Không tạo được ghi chú.'));
     return res.json();
   },
 
@@ -34,7 +34,7 @@ export const notesAPI = {
       credentials: 'include',
       body: JSON.stringify(data),
     });
-    if (!res.ok) throw new Error(await parseError(res, 'Failed to update note.'));
+    if (!res.ok) throw new Error(await parseError(res, 'Không cập nhật được ghi chú.'));
     return res.json();
   },
 
@@ -43,6 +43,6 @@ export const notesAPI = {
       method: 'DELETE',
       credentials: 'include',
     });
-    if (!res.ok) throw new Error(await parseError(res, 'Failed to delete note.'));
+    if (!res.ok) throw new Error(await parseError(res, 'Không xóa được ghi chú.'));
   },
 };

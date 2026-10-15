@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+import { API_URL } from './config';
 
 async function parseError(res, fallback) {
   try {
@@ -9,18 +9,12 @@ async function parseError(res, fallback) {
   }
 }
 
-function handleUnauthorized(res) {
-  if (res.status === 401 || res.status === 403) {
-    window.location.href = '/login';
-  }
-}
-
 export const studySessionAPI = {
-  getAllSessions: async () => {
-    const res = await fetch(`${API_URL}/study-sessions`, { credentials: 'include' });
+  getAllSessions: async (days) => {
+    const query = days ? `?days=${encodeURIComponent(days)}` : '';
+    const res = await fetch(`${API_URL}/study-sessions${query}`, { credentials: 'include' });
     if (!res.ok) {
-      handleUnauthorized(res);
-      throw new Error(await parseError(res, 'Failed to fetch sessions.'));
+      throw new Error(await parseError(res, 'Không tải được lịch sử phiên học.'));
     }
     return res.json();
   },
@@ -33,8 +27,7 @@ export const studySessionAPI = {
       body: JSON.stringify(sessionData),
     });
     if (!res.ok) {
-      handleUnauthorized(res);
-      throw new Error(await parseError(res, 'Failed to save session.'));
+      throw new Error(await parseError(res, 'Không lưu được phiên học.'));
     }
     return res.json();
   },
@@ -42,8 +35,7 @@ export const studySessionAPI = {
   getStats: async () => {
     const res = await fetch(`${API_URL}/study-sessions/stats`, { credentials: 'include' });
     if (!res.ok) {
-      handleUnauthorized(res);
-      throw new Error(await parseError(res, 'Failed to fetch stats.'));
+      throw new Error(await parseError(res, 'Không tải được thống kê.'));
     }
     return res.json();
   },
@@ -54,8 +46,7 @@ export const studySessionAPI = {
       credentials: 'include',
     });
     if (!res.ok) {
-      handleUnauthorized(res);
-      throw new Error(await parseError(res, 'Failed to delete session.'));
+      throw new Error(await parseError(res, 'Không xóa được phiên học.'));
     }
   },
 };

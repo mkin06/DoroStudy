@@ -1,0 +1,71 @@
+.df-dialog {
+  box-sizing: border-box; width: min(550px, calc(100vw - 24px)); max-height: calc(100dvh - 28px);
+  margin: auto; padding: 26px; overflow-y: auto; overscroll-behavior: contain;
+  border: 1px solid #454a3e; border-radius: 18px; background: #20231e; color: #f1eee5;
+  box-shadow: 0 24px 90px #0007; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  line-height: 1.5; color-scheme: dark;
+}
+.df-dialog::backdrop { background: #080c0bb3; backdrop-filter: blur(5px); }
+.df-dialog *, .df-dialog *::before, .df-dialog *::after { box-sizing: border-box; }
+.df-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.df-eyebrow { display: flex; align-items: center; gap: 7px; font-size: 10px; font-weight: 600; letter-spacing: 1.4px; color: #d8ba87; }
+.df-header h2 { margin: 10px 0 0; font-size: 22px; font-weight: 600; letter-spacing: -.5px; line-height: 1.3; }
+.df-close { display: grid; place-items: center; width: 34px; height: 34px; flex-shrink: 0; padding: 0; border: 1px solid #505447; border-radius: 50%; background: transparent; color: #d6d9cc; cursor: pointer; }
+.df-intro { font-size: 12px; color: #b8beaf; margin: 14px 0 18px; }
+.df-kind { display: flex; padding: 4px; gap: 4px; border: 1px solid #464c3d; border-radius: 10px; margin-bottom: 22px; background: #191d17; }
+.df-kind button { flex: 1; padding: 9px 7px; border: 0; border-radius: 7px; background: transparent; color: #b8beaf; font: inherit; font-size: 12px; cursor: pointer; }
+.df-kind button[aria-pressed="true"] { background: #eeeadf; color: #292c25; font-weight: 600; }
+.df-fields, .df-question { min-width: 0; margin: 0; padding: 0; border: 0; }
+.df-question { margin-bottom: 22px; }
+.df-question legend { width: 100%; margin: 0 0 12px; padding: 0; font-size: 14px; font-weight: 600; }
+.df-context { padding: 12px 14px; background: #d8ba870b; border-left: 2px solid #d8ba87; border-radius: 0 9px 9px 0; margin-bottom: 22px; }
+.df-context > span { color: #d8ba87; font-size: 11px; font-weight: 600; }
+.df-context p { font-size: 13px; margin: 5px 0 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.df-context small { display: block; font-size: 11px; color: #b8beaf; margin-top: 9px; }
+.df-rating { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.df-rating label { position: relative; cursor: pointer; }
+.df-rating input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.df-rating label > span { display: grid; place-items: center; min-height: 46px; border: 1px solid #505747; background: #282e23; border-radius: 9px; color: #eeeadf; font-size: 18px; font-weight: 600; }
+.df-rating label:hover > span, .df-choices label:hover { border-color: #a9987b; }
+.df-rating .selected > span, .df-choices .selected { border-color: #d8ba87; background: #d8ba8715; color: #f6dcae; }
+.df-scale { display: flex; justify-content: space-between; margin-top: 7px; font-size: 11px; color: #b8beaf; }
+.df-choices { display: grid; gap: 7px; }
+.df-choices label { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #414936; border-radius: 8px; font-size: 13px; cursor: pointer; }
+.df-choices input { appearance: auto; -webkit-appearance: auto; accent-color: #d8ba87; margin: 0; width: 16px; height: 16px; flex-shrink: 0; }
+.df-comment { display: block; font-size: 14px; font-weight: 600; }
+.df-comment > span { color: #b8beaf; font-size: 11px; font-weight: 400; }
+.df-comment textarea { display: block; width: 100%; min-height: 116px; max-height: 260px; resize: vertical; padding: 12px; margin-top: 10px; border: 1px solid #5b644e; border-radius: 10px; background: #191d17; color: #f1eee5; font: inherit; font-size: 14px; line-height: 1.6; }
+.df-comment textarea::placeholder { color: #a3aa99; }
+.df-comment-hint { display: flex; justify-content: space-between; gap: 14px; margin: 6px 0 19px; font-size: 10px; color: #aeb6a2; }
+.df-comment-hint > span:last-child { white-space: nowrap; }
+.df-select { display: grid; gap: 7px; margin-top: 14px; font-size: 12px; }
+.df-select select { width: 100%; min-width: 0; padding: 11px 9px; border: 1px solid #505747; border-radius: 8px; background: #282e23; color: #f1eee5; font: inherit; }
+.df-ux-selects { margin-top: -4px; margin-bottom: 20px; }
+.df-optional { margin: 4px 0 18px; border: 1px solid #434c37; border-radius: 10px; }
+.df-expand { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 13px; border: 0; border-radius: 10px; background: #282e2340; color: #eeeadf; font: inherit; text-align: left; cursor: pointer; }
+.df-expand strong { display: block; font-size: 12px; font-weight: 600; }
+.df-expand small { display: block; margin-top: 4px; color: #b8beaf; font-size: 11px; }
+.df-expand > span:last-child { color: #d8ba87; font-size: 22px; }
+.df-incident { padding: 0 13px 15px; }
+.df-muted, .df-privacy { font-size: 11px; color: #b8beaf; }
+.df-privacy { margin: 0 0 19px; line-height: 1.65; }
+.df-actions { display: flex; gap: 10px; }
+.df-primary, .df-secondary { padding: 12px 15px; border-radius: 9px; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.df-primary { flex: 2; border: 1px solid #eeeadf; background: #eeeadf; color: #292c25; }
+.df-primary:hover:not(:disabled) { background: #fff8e9; }
+.df-secondary { flex: 1; border: 1px solid #505747; background: transparent; color: #d6d9cc; }
+.df-dialog button:disabled { opacity: .45; cursor: not-allowed; }
+.df-dialog :focus-visible { outline: 2px solid #d8ba87; outline-offset: 3px; }
+.df-rating input:focus-visible + span { outline: 2px solid #d8ba87; outline-offset: 3px; }
+.df-state { padding: 20px 0 8px; text-align: center; font-size: 14px; }
+.df-state .df-primary, .df-state .df-secondary { margin: 10px 4px 0; }
+.df-success { display: grid; place-items: center; width: 52px; height: 52px; margin: 0 auto 18px; border-radius: 50%; background: #9bb88a1a; color: #b5d49d; }
+.df-error { margin-bottom: 18px; padding: 12px; border: 1px solid #e7aa7860; border-radius: 9px; background: #e7aa780b; color: #f4c397; font-size: 12px; }
+.df-error p { margin: 0; }
+.df-error button { padding: 8px 0 0; border: 0; background: transparent; color: #f4d9ae; text-decoration: underline; font: inherit; cursor: pointer; }
+@media(max-width: 480px) {
+  .df-dialog { padding: 21px 17px; border-radius: 14px; }
+  .df-header h2 { font-size: 20px; }
+  .df-comment textarea, .df-select select { font-size: 16px; }
+  .df-kind button { font-size: 11px; }
+}

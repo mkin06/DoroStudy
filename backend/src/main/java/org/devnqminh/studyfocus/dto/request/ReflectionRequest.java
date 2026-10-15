@@ -3,6 +3,7 @@ package org.devnqminh.studyfocus.dto.request;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
 import java.util.List;
 
@@ -31,6 +32,9 @@ public record ReflectionRequest(
 
         List<String> distractionReasons,  // Câu 4: ["social_media","noise","fatigue","mind_wandering","none"]
 
-        String subject               // optional: tag môn học (cho phép tag ngược sau phiên)
+        String subject,              // optional: tag môn học (cho phép tag ngược sau phiên)
+
+        @Pattern(regexp = "vi|en", message = "language must be vi or en")
+        String language
 ) {
 }

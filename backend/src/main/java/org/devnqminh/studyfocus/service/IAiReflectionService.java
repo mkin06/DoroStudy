@@ -18,7 +18,7 @@ public interface IAiReflectionService {
      */
     ReflectionResponse createReflection(ReflectionRequest request, Long userId);
 
-    List<ReflectionResponse> getUserReflections(Long userId);
+    List<ReflectionResponse> getUserReflections(Long userId, int limit);
 
     ReflectionResponse getBySessionId(Long sessionId, Long userId);
 

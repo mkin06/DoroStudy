@@ -6,6 +6,7 @@ Java (Jackson) gửi JSON theo camelCase, nên tất cả model kế thừa Came
 
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
+from typing import Literal
 
 
 class CamelModel(BaseModel):
@@ -36,6 +37,7 @@ class HistoryItem(CamelModel):
 
 
 class AnalyzeRequest(CamelModel):
+    language: Literal["vi", "en"] = "vi"
     current_session: CurrentSession
     history: list[HistoryItem] = []
     # Quy luật backend đã xác minh bằng thống kê — model chỉ diễn giải, không tự suy ra

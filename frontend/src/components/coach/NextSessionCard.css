@@ -10,11 +10,10 @@
     width: 100%;
     max-width: 520px;
     margin: 10px auto 0;
-    background: rgba(0, 0, 0, 0.42);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 14px;
-    color: #fff;
+    background: rgba(24, 25, 24, 0.94);
+    border: 1px solid rgba(245, 240, 228, 0.16);
+    border-radius: 12px;
+    color: #f2f0e9;
     overflow: hidden;
     animation: coachFadeIn 0.35s ease-out;
 }
@@ -24,12 +23,11 @@
     to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Dải màu trái báo phán quyết khung giờ — kênh phụ, không phải kênh duy nhất:
-   nội dung luôn kèm icon và chữ nên người không phân biệt được màu vẫn đọc đủ nghĩa. */
-.coach-card.good   { border-left: 3px solid #4ade80; }
-.coach-card.ok     { border-left: 3px solid #fbbf24; }
-.coach-card.poor   { border-left: 3px solid #fb923c; }
-.coach-card.unknown{ border-left: 3px solid rgba(255, 255, 255, 0.3); }
+/* Màu trạng thái chỉ là tín hiệu phụ; phần mở rộng luôn có nhãn bằng chữ. */
+.coach-card.good   { --coach-status: #94b3a0; }
+.coach-card.ok     { --coach-status: #c7b584; }
+.coach-card.poor   { --coach-status: #c29b83; }
+.coach-card.unknown{ --coach-status: #95988f; }
 
 /* ========== DÒNG THU GỌN ========== */
 
@@ -37,8 +35,8 @@
     width: 100%;
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
+    gap: 16px;
+    padding: 15px 18px;
     background: none;
     border: none;
     color: inherit;
@@ -49,100 +47,138 @@
 }
 
 .coach-summary:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(245, 240, 228, 0.035);
+}
+
+.coach-summary:focus-visible,
+.coach-apply:focus-visible {
+    outline: 2px solid #d2bd91;
+    outline-offset: -3px;
+}
+
+.coach-intro {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.coach-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: #a8aca5;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.4;
 }
 
 .coach-verdict {
-    font-size: 13px;
-    line-height: 1;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--coach-status);
     flex-shrink: 0;
 }
 
 .coach-headline {
-    flex: 1;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 1.45;
+    letter-spacing: -0.015em;
+    overflow-wrap: anywhere;
 }
 
 .coach-prediction {
     display: flex;
-    align-items: baseline;
-    gap: 4px;
+    align-items: center;
+    gap: 8px;
     flex-shrink: 0;
 }
 
 .coach-prediction strong {
-    font-size: 18px;
-    font-weight: 700;
-    color: #ffd479;
+    font-size: 26px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    color: #e7d8b6;
+    font-variant-numeric: tabular-nums;
 }
 
 .coach-prediction-label {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.55);
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: #a8aca5;
 }
 
 .coach-chevron {
-    font-size: 9px;
-    color: rgba(255, 255, 255, 0.45);
+    color: #a8aca5;
     flex-shrink: 0;
+    transition: transform 0.18s ease;
 }
+
+.coach-card.expanded .coach-chevron { transform: rotate(180deg); }
 
 /* ========== PHẦN MỞ RỘNG ========== */
 
 .coach-body {
-    padding: 0 14px 12px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    padding-top: 10px;
+    padding: 16px 18px 18px;
+    border-top: 1px solid rgba(245, 240, 228, 0.1);
 }
 
 .coach-timing,
 .coach-guardrail,
 .coach-streak {
     margin: 0 0 8px;
-    font-size: 12.5px;
-    line-height: 1.5;
-    padding: 8px 10px;
-    border-radius: 9px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 15px;
+    line-height: 1.65;
+    padding: 0;
+}
+
+.coach-timing svg,
+.coach-guardrail svg,
+.coach-streak svg {
+    flex-shrink: 0;
+    margin-top: 4px;
+    color: #a8aca5;
+}
+
+.coach-timing strong {
+    display: block;
+    margin-bottom: 3px;
+    color: var(--coach-status);
+    font-size: 13px;
+    font-weight: 600;
 }
 
 .coach-timing {
-    background: rgba(255, 255, 255, 0.06);
-    color: rgba(255, 255, 255, 0.88);
-}
-
-.coach-timing.poor {
-    background: rgba(251, 146, 60, 0.14);
-    color: #fed7aa;
-}
-
-.coach-timing.good {
-    background: rgba(74, 222, 128, 0.12);
-    color: #bbf7d0;
+    color: #d4d6cf;
 }
 
 /* Biện pháp chặn là việc user phải LÀM, nên nó được làm nổi hơn phần giải thích */
 .coach-guardrail {
-    background: rgba(226, 87, 76, 0.16);
-    color: #ffd4d0;
-    font-weight: 500;
+    margin-top: 14px;
+    color: #e8dfcc;
+    font-weight: 400;
 }
 
 .coach-streak {
-    background: rgba(255, 255, 255, 0.05);
-    color: rgba(255, 255, 255, 0.7);
+    color: #b6bab2;
 }
 
 .coach-reasons {
-    margin: 0 0 10px;
-    padding-left: 16px;
-    font-size: 11.5px;
+    margin: 14px 0 18px;
+    padding-left: 20px;
+    font-size: 14px;
     line-height: 1.6;
-    color: rgba(255, 255, 255, 0.6);
+    color: #b6bab2;
 }
+
+.coach-reasons li + li { margin-top: 5px; }
 
 .coach-footer {
     display: flex;
@@ -150,35 +186,44 @@
     justify-content: space-between;
     gap: 10px;
     flex-wrap: wrap;
+    padding-top: 14px;
+    border-top: 1px solid rgba(245, 240, 228, 0.1);
 }
 
 .coach-meta {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.45);
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: #a8aca5;
     flex: 1;
     min-width: 180px;
 }
 
 .coach-apply {
-    background: #e2574c;
-    border: none;
-    border-radius: 9px;
-    color: #fff;
-    font-size: 12.5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: #e7dcc3;
+    border: 1px solid #e7dcc3;
+    border-radius: 8px;
+    color: #252720;
+    font-size: 13px;
     font-weight: 600;
-    padding: 8px 14px;
+    padding: 10px 14px;
     cursor: pointer;
     transition: background 0.2s, opacity 0.2s;
     white-space: nowrap;
 }
 
 .coach-apply:hover:not(:disabled) {
-    background: #f0655a;
+    background: #f0e8d7;
+    border-color: #f0e8d7;
 }
 
 .coach-apply:disabled {
-    background: rgba(74, 222, 128, 0.22);
-    color: #bbf7d0;
+    background: rgba(148, 179, 160, 0.1);
+    border-color: rgba(148, 179, 160, 0.2);
+    color: #a7c1af;
     cursor: default;
 }
 
@@ -192,6 +237,17 @@
     }
 
     .coach-headline {
-        font-size: 13px;
+        font-size: 15px;
     }
+
+    .coach-summary { gap: 12px; padding: 14px; }
+    .coach-body { padding: 14px; }
+    .coach-prediction strong { font-size: 24px; }
+    .coach-footer { align-items: stretch; flex-direction: column; }
+    .coach-apply { white-space: normal; text-align: left; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .coach-card { animation: none; }
+    .coach-chevron { transition: none; }
 }

@@ -31,6 +31,9 @@
   gap: 20px;
 }
 
+/* Keep flex shrink from collapsing grid rows over the scene above them. */
+.background-modal-content > * { flex-shrink: 0; }
+
 @keyframes fadeInModal {
   from { opacity: 0; }
   to { opacity: 1; }

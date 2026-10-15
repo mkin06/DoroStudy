@@ -228,7 +228,8 @@ CREATE TABLE IF NOT EXISTS times (
 
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE SET NULL,
-    INDEX idx_times_user_created (user_id, created_at)
+    INDEX idx_times_user_created (user_id, created_at),
+    INDEX idx_times_user_id_desc (user_id, id)
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------------
@@ -256,7 +257,8 @@ CREATE TABLE IF NOT EXISTS ai_reflections (
     UNIQUE KEY uk_ai_reflection_session (session_id),
     FOREIGN KEY (session_id) REFERENCES times(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_ai_reflections_user (user_id)
+    INDEX idx_ai_reflections_user (user_id),
+    INDEX idx_ai_reflections_user_id_desc (user_id, id)
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------------

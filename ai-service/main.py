@@ -94,6 +94,14 @@ def _fallback_feedback(req: AnalyzeRequest) -> AiFeedback:
     s = req.current_session
     score = focus_score(s.completion_percent, s.focus_level, s.energy_level)
 
+    if req.language == "en":
+        distracted = any(reason != "none" for reason in s.distraction_reasons)
+        advice = ("Remove the distraction you reported before starting a 15-minute session." if distracted
+                  else "Try a 15-minute session with one small, clear goal." if s.focus_level <= 2
+                  else "Keep the same settings for your next session.")
+        return AiFeedback(summary=f"You studied {s.duration_minutes:.0f} minutes and completed {s.completion_percent}% of your goal.",
+                          comparison=None, recommendation=advice, focus_score=score, source="fallback")
+
     summary = (
         f"Bạn đã học {s.duration_minutes:.0f} phút, hoàn thành "
         f"{s.completion_percent}% mục tiêu với mức tập trung {s.focus_level}/5."

@@ -1,3 +1,5 @@
+import { useLanguage } from '../../hooks/useLanguage';
+import { translate as t } from '../../lib/locale';
 import React, { useCallback, useEffect, useState } from 'react';
 import './NudgeBanner.css';
 import {
@@ -32,6 +34,7 @@ const TONES = {
  *  - refreshKey: đổi để tải lại (sau khi vừa xong một phiên thì lời nhắc thường hết hiệu lực)
  */
 export default function NudgeBanner({ onAct, refreshKey }) {
+  useLanguage();
   const [nudge, setNudge] = useState(null);
   const [dismissed, setDismissed] = useState(false);
   const [pushConfig, setPushConfig] = useState({ enabled: false, subscribed: false });
@@ -80,7 +83,7 @@ export default function NudgeBanner({ onAct, refreshKey }) {
         setPushConfig((c) => ({ ...c, subscribed: true }));
       }
     } catch (err) {
-      setPushError(err.message || 'Không bật được thông báo.');
+      setPushError(err.message || t("Không bật được thông báo."));
     } finally {
       setBusy(false);
     }
@@ -95,7 +98,7 @@ export default function NudgeBanner({ onAct, refreshKey }) {
     setDismissed(true);
   }, [nudge, onAct]);
 
-  if (!nudge || dismissed) {
+  if (!nudge?.title || dismissed) {
     return null;
   }
 
@@ -118,7 +121,7 @@ export default function NudgeBanner({ onAct, refreshKey }) {
             onClick={handleTogglePush}
             disabled={busy}
           >
-            {busy ? 'Đang bật…' : '🔔 Nhắc tôi cả khi không mở app'}
+            {busy ? t("Đang bật…") : t("🔔 Nhắc tôi cả khi không mở app")}
           </button>
         )}
         {pushConfig.enabled && pushConfig.subscribed && (
@@ -127,9 +130,7 @@ export default function NudgeBanner({ onAct, refreshKey }) {
             className="nudge-push-link subscribed"
             onClick={handleTogglePush}
             disabled={busy}
-          >
-            ✓ Đã bật nhắc nhở · tắt
-          </button>
+          >{t("✓ Đã bật nhắc nhở · tắt")}</button>
         )}
         {pushError && <span className="nudge-push-error">{pushError}</span>}
       </div>
@@ -144,7 +145,7 @@ export default function NudgeBanner({ onAct, refreshKey }) {
           type="button"
           className="nudge-dismiss"
           onClick={() => setDismissed(true)}
-          aria-label="Bỏ qua lời nhắc"
+          aria-label={t("Bỏ qua lời nhắc")}
         >
           ✕
         </button>
