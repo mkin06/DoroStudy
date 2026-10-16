@@ -21,6 +21,7 @@ public class UserProfileResponse {
     private String image;
     private Instant createdAt;
     private String status;
+    private String role;
     private List<StudyTimeDTO> times;
 
     @Data

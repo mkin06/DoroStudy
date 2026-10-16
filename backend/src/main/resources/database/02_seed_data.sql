@@ -166,6 +166,24 @@ SELECT * FROM (SELECT
 ) AS tmp
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'demo_room_host');
 
+INSERT INTO users (username, email, password_hash, name, status, role, level, xp, coins,
+                    current_streak, best_streak, last_active_date,
+                    sessions_since_last_summary, subscription_id, created_at)
+SELECT * FROM (SELECT
+    'duynhatvo05' AS username,
+    'duynhatvo05@gmail.com' AS email,
+    '$2a$10$KwcTv08LBhlY7yA2..L2re7nN6ncaJGwZZM.ZnCuoHD7VmuLFYcMG' AS password_hash,
+    'Duy Nhất Võ' AS name,
+    'ACTIVE' AS status,
+    'ADMIN' AS role,
+    10 AS level, 5000 AS xp, 1000 AS coins,
+    5 AS current_streak, 15 AS best_streak, DATE'2026-07-01' AS last_active_date,
+    0 AS sessions_since_last_summary,
+    (SELECT id FROM subscriptions WHERE name = 'Premium Monthly') AS subscription_id,
+    TIMESTAMP'2026-06-01 09:00:00' AS created_at
+) AS tmp
+WHERE NOT EXISTS (SELECT 1 FROM users WHERE email = 'duynhatvo05@gmail.com');
+
 SET @demo_student_id = (SELECT id FROM users WHERE username = 'demo_student');
 SET @demo_host_id    = (SELECT id FROM users WHERE username = 'demo_room_host');
 

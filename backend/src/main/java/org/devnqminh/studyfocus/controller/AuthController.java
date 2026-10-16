@@ -86,5 +86,6 @@ public class AuthController {
         else request.changeSessionId();
         session.setAttribute("USER_ID", response.getUserId());
         session.setAttribute("USERNAME", response.getUsername());
+        session.setAttribute("ROLE", response.getRole());
     }
 }

@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS users (
     name                            VARCHAR(120) NOT NULL,
     image                           VARCHAR(500),
     status                          ENUM('ACTIVE','INACTIVE','BANNED') NOT NULL DEFAULT 'ACTIVE',
+    role                            VARCHAR(30) NOT NULL DEFAULT 'USER',
 
     level                           INT NOT NULL DEFAULT 1,
     xp                              INT NOT NULL DEFAULT 0,
@@ -342,3 +343,30 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_push_subscriptions_active (active)
 ) ENGINE=InnoDB;
+
+-- ---------------------------------------------------------------------
+-- 19. feedbacks (Góp ý sản phẩm & AI Reflection)
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS feedbacks (
+    id                  BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id             BIGINT NULL,
+    user_name           VARCHAR(120),
+    user_email          VARCHAR(255),
+    kind                VARCHAR(20) NOT NULL,
+    comment             TEXT,
+    area                VARCHAR(50),
+    issue_type          VARCHAR(50),
+    usefulness          INT,
+    actionability       VARCHAR(50),
+    distraction         VARCHAR(50),
+    coping_action       VARCHAR(50),
+    outcome             VARCHAR(50),
+    requested_support   VARCHAR(50),
+    reflection_id       BIGINT,
+    status              VARCHAR(30) NOT NULL DEFAULT 'NEW',
+    created_at          DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_feedbacks_status (status),
+    INDEX idx_feedbacks_created_at (created_at)
+) ENGINE=InnoDB;
+

@@ -59,6 +59,8 @@ public class SecurityConfig {
                 .addFilterBefore(new SessionAuthFilter(), AnonymousAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**", "/api/ping").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/feedback").permitAll()
+                        .requestMatchers("/api/feedback/admin/**", "/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 );
 
