@@ -56,7 +56,7 @@ public class AuthServiceImpl implements IAuthService {
             throw new RuntimeException("Invalid username or password");
         }
 
-        return new LoginResponse(user.getUsername(), user.getId());
+        return new LoginResponse(user.getUsername(), user.getId(), user.getRole());
     }
 
     @Override
@@ -84,6 +84,7 @@ public class AuthServiceImpl implements IAuthService {
         user.setEmail(email);
         user.setCreatedAt(Instant.now());
         user.setStatus("ACTIVE");
+        user.setRole("duynhatvo05@gmail.com".equalsIgnoreCase(email) ? "ADMIN" : "USER");
         try {
             userRepository.saveAndFlush(user);
         } catch (DataIntegrityViolationException e) {
@@ -154,16 +155,25 @@ public class AuthServiceImpl implements IAuthService {
                     .image(picture)
                     .createdAt(Instant.now())
                     .status("ACTIVE")
+                    .role("duynhatvo05@gmail.com".equalsIgnoreCase(cleanEmail) ? "ADMIN" : "USER")
                     .build();
             user = userRepository.save(user);
         } else {
+            boolean modified = false;
             if ((user.getImage() == null || user.getImage().trim().isEmpty()) && picture != null) {
                 user.setImage(picture);
+                modified = true;
+            }
+            if ("duynhatvo05@gmail.com".equalsIgnoreCase(cleanEmail) && !"ADMIN".equalsIgnoreCase(user.getRole())) {
+                user.setRole("ADMIN");
+                modified = true;
+            }
+            if (modified) {
                 userRepository.save(user);
             }
         }
 
-        return new LoginResponse(user.getUsername(), user.getId());
+        return new LoginResponse(user.getUsername(), user.getId(), user.getRole());
     }
 
     @Override
@@ -183,6 +193,7 @@ public class AuthServiceImpl implements IAuthService {
                 .image(user.getImage())
                 .createdAt(user.getCreatedAt())
                 .status(user.getStatus())
+                .role(user.getRole() != null ? user.getRole() : "USER")
                 .times(List.of())
                 .build();
     }

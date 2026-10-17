@@ -24,13 +24,10 @@ const DISTRACTIONS = [
   { id: 'none', label: '✅ Không xao nhãng' },
 ];
 
-// Yêu cầu nghiệp vụ: popup chiếm tối đa 15 giây của user.
-const COUNTDOWN_SECONDS = 15;
-
 /**
  * Popup reflection sau mỗi phiên Pomodoro.
  *
- * Bốn câu hỏi, tất cả đều là chạm/kéo — không gõ chữ, nên vẫn vừa 15 giây. Câu năng lượng
+ * Bốn câu hỏi chạm/kéo, không giới hạn thời gian. Câu năng lượng
  * là câu duy nhất được thêm so với bản đầu: nó là biến giải thích cho điểm tập trung
  * (hết pin hay bị xao nhãng?) và là dữ liệu để dựng ngưỡng cạn kiệt năng lượng.
  *
@@ -57,7 +54,6 @@ export default function ReflectionModal({
   const [feedback, setFeedback] = useState(null);
   const [quotaNotice, setQuotaNotice] = useState(null);
   const [error, setError] = useState(null);
-  const [secondsLeft, setSecondsLeft] = useState(COUNTDOWN_SECONDS);
   // Màn hình kết quả mặc định thu gọn. Người ta vừa học xong và đang muốn nghỉ, không phải
   // đang muốn đọc báo cáo — ai cần chi tiết thì bấm một cái là có.
   const [showDetails, setShowDetails] = useState(false);
@@ -77,12 +73,6 @@ export default function ReflectionModal({
     document.addEventListener('visibilitychange', recordVisibleResult);
     return () => document.removeEventListener('visibilitychange', recordVisibleResult);
   }, [step, feedback]);
-
-  // Bộ đếm chỉ phụ thuộc vào `step`. Handler và lựa chọn hiện tại đi qua ref để việc user
-  // đổi slider/emoji không reset lại đồng hồ 15 giây.
-  const submitRef = useRef(null);
-  const closeRef = useRef(onClose);
-  const focusLevelRef = useRef(focusLevel);
 
   const handleSubmit = useCallback(async () => {
     if (focusLevel === 0 || step !== 'questions') return;
@@ -113,47 +103,6 @@ export default function ReflectionModal({
     }
   }, [sessionId, completionPercent, focusLevel, energyLevel, distraction, subject, step, language]);
 
-  useEffect(() => {
-    submitRef.current = handleSubmit;
-    closeRef.current = onClose;
-    focusLevelRef.current = focusLevel;
-  }, [handleSubmit, onClose, focusLevel]);
-
-  // Chỉ tính 15 giây khi người dùng đang nhìn thấy khảo sát. Nếu phiên kết thúc ở tab
-  // nền, khảo sát sẽ chờ nguyên vẹn đến lúc họ quay lại thay vì tự đóng mà họ không biết.
-  useEffect(() => {
-    if (step !== 'questions') return undefined;
-
-    let interval;
-    const stopCountdown = () => clearInterval(interval);
-    const startCountdown = () => {
-      stopCountdown();
-      if (document.hidden) return;
-      interval = setInterval(() => {
-      setSecondsLeft((prev) => {
-        if (prev > 1) return prev - 1;
-        stopCountdown();
-        // Đã chọn đủ thì gửi luôn, chưa chọn gì thì đóng — không chặn màn hình user
-        if (focusLevelRef.current > 0) {
-          submitRef.current?.();
-        } else {
-          closeRef.current?.();
-        }
-        return 0;
-      });
-      }, 1000);
-    };
-
-    startCountdown();
-    document.addEventListener('visibilitychange', startCountdown);
-
-    return () => {
-      stopCountdown();
-      document.removeEventListener('visibilitychange', startCountdown);
-    };
-  }, [step]);
-
-  const countdownPercent = Math.round((secondsLeft / COUNTDOWN_SECONDS) * 100);
   const reward = feedback?.reward;
   const noteInsight = feedback?.noteInsight;
   const band = scoreBand(feedback?.focusScore);
@@ -198,16 +147,12 @@ export default function ReflectionModal({
   return (
     <div className="reflection-backdrop" role="dialog" aria-modal="true">
       <div className="reflection-modal">
-        <button className="reflection-close" onClick={onClose} aria-label={t("Đóng")}>✕</button>
+        <button type="button" className="reflection-close" onClick={onClose} aria-label={t("Đóng")} title={t("Đóng")}>✕</button>
 
         {step === 'questions' && (
           <>
             <h2 className="reflection-title">{t("Hoàn thành phiên học! 🎉")}</h2>
-            <p className="reflection-subtitle">{t("15 giây để AI hiểu phiên học của bạn — còn")}{secondsLeft}s
-            </p>
-            <div className="reflection-countdown" aria-hidden="true">
-              <div className="reflection-countdown-bar" style={{ width: `${countdownPercent}%` }} />
-            </div>
+            <p className="reflection-subtitle">{t("Trả lời theo thời gian của bạn. Bấm X để đóng hoặc Xem kết quả để gửi.")}</p>
 
             {error && <div className="reflection-error">{t(error)}</div>}
 

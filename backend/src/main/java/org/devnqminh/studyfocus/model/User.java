@@ -49,6 +49,10 @@ public class User {
     @Column(nullable = false, length = 30)
     private String status; // e.g., ACTIVE, INACTIVE
 
+    @Column(nullable = false, length = 30)
+    @Builder.Default
+    private String role = "USER"; // e.g., USER, ADMIN
+
     // Many users -> one subscription plan (optional: free user)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subscription_id") // maps id_sub(FR)
@@ -79,5 +83,6 @@ public class User {
     void prePersist() {
         if (createdAt == null) createdAt = Instant.now();
         if (status == null) status = "ACTIVE";
+        if (role == null) role = "USER";
     }
 }

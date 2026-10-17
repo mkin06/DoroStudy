@@ -2,7 +2,7 @@ import { useLanguage } from '../../hooks/useLanguage';
 import { translate as t } from '../../lib/locale';
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, ChartNoAxesCombined, CircleHelp, CloudRain, Image, ListTodo, Maximize2, MessageSquareText, Music2, NotebookPen, Settings2, UserRound } from 'lucide-react';
+import { Bell, ChartNoAxesCombined, CircleHelp, CloudRain, Image, Inbox, ListTodo, Maximize2, MessageSquareText, Music2, NotebookPen, Settings2, UserRound } from 'lucide-react';
 import './PomodoroTimer.css';
 import useTimer from '../../hooks/userTimer';
 import backgroundImage from '../../assets/background.jpg';
@@ -472,6 +472,11 @@ export default function PomodoroTimer() {
   }, []);
 
 const handleMenuItemClick = useCallback(async (itemId) => {
+  if (itemId === 'admin_feedback') {
+    navigate('/admin/feedback');
+    setShowUserMenu(false);
+    return;
+  }
   if (itemId === 'feedback') {
     setFeedbackForm({ initialKind: 'ux', entryPoint: 'user_menu' });
     setShowUserMenu(false);
@@ -692,7 +697,7 @@ const handleMenuItemClick = useCallback(async (itemId) => {
             duration_minutes: presetTimes[0],
             break_minutes: presetTimes[1],
           });
-          toast.success(t("Đã lưu phiên học. Hãy dành 15 giây để phản hồi nhé!"));
+          toast.success(t("Đã lưu phiên học. Bạn có thể phản hồi khi sẵn sàng."));
           handleStartBreak();
           // Mở popup reflection (user trả lời trong lúc nghỉ, có thể skip)
           setReflectionSessionId(saved.id);
@@ -734,6 +739,20 @@ const handleMenuItemClick = useCallback(async (itemId) => {
   }, []);
 
   const isBreakMode = currentPreset !== 0;
+
+  const userMenuItems = useMemo(() => {
+    const items = [...MENU_ITEMS];
+    if (currentUser?.role?.toUpperCase() === 'ADMIN') {
+      items.push({
+        id: 'admin_feedback',
+        icon: Inbox,
+        text: 'Danh sách góp ý',
+        arrow: true,
+        type: 'lucide',
+      });
+    }
+    return items;
+  }, [currentUser?.role]);
 
   // ========== RENDER ==========
   return (
@@ -816,7 +835,7 @@ const handleMenuItemClick = useCallback(async (itemId) => {
                 <UserDropdownHeader user={currentUser} onClose={handleCloseUserMenu} />
                 <div className="user-dropdown-divider" />
                 <UserMenuSection
-                  items={MENU_ITEMS}
+                  items={userMenuItems}
                   onItemClick={handleMenuItemClick}
                 />
                 <UserMenuSection

@@ -58,49 +58,81 @@ function validate(kind, values, reflection) {
 
 export async function sendFeedback({ kind, values, reflection, entryPoint, submission }) {
   const answers = validate(kind, values, reflection);
-  const analytics = await getFeedbackAnalyticsContext();
-  const cooldownKey = `${COOLDOWN_KEY}.${analytics.distinctId}`;
-  try {
-    const last = Number(sessionStorage.getItem(cooldownKey));
-    if (last && Date.now() - last < COOLDOWN_MS) throw new Error('Bạn vừa gửi góp ý. Vui lòng đợi một phút trước khi gửi thêm.');
-  } catch (error) { if (error.message.includes('một phút')) throw error; }
 
-  const properties = {
-    distinct_id: analytics.distinctId, $session_id: analytics.sessionId,
-    $process_person_profile: analytics.identified,
-    app_name: 'DoroStudy', app_environment: import.meta.env.PROD ? 'production' : 'development',
-    form: kind, survey_version: FEEDBACK_VERSION, entry_point: entryPoint,
-    feedback_id: submission.id, page_path: window.location.pathname, language: getLanguage(),
-    viewport: window.innerWidth <= 600 ? 'mobile' : 'desktop',
-    ...feedbackCampaign(),
-    ...Object.fromEntries(Object.entries(answers).filter(([key]) => key !== 'comment')),
-    feedback_comment: answers.comment,
-    ...(kind === 'ai' ? { reflection_id: String(reflection.id), ai_source: reflection.source || (reflection.aiAvailable ? 'gemini' : 'unavailable') } : {}),
+  // Send to backend database
+  const backendPayload = {
+    kind,
+    comment: answers.comment || '',
+    area: answers.area || null,
+    issueType: answers.issue_type || null,
+    usefulness: answers.usefulness || null,
+    actionability: answers.actionability || null,
+    distraction: answers.distraction || null,
+    copingAction: answers.coping_action || null,
+    outcome: answers.outcome || null,
+    requestedSupport: answers.requested_support || null,
+    reflectionId: kind === 'ai' ? (reflection?.id ? Number(reflection.id) : null) : null,
   };
-  const nativeSurvey = /^[a-f0-9-]{36}$/i.test(SURVEY_IDS[kind]);
-  if (nativeSurvey) {
-    properties.$survey_id = SURVEY_IDS[kind];
-    properties.$survey_iteration = 0;
-    properties.$survey_submission_id = submission.id;
-    properties.$survey_completed = true;
-    properties.$survey_questions = FEEDBACK_SURVEYS[kind].questions.map(({ id, question }) => ({ id, question }));
-    for (const question of FEEDBACK_SURVEYS[kind].questions) {
-      if (answers[question.key] !== undefined && answers[question.key] !== '') {
-        properties[`$survey_response_${question.id}`] = responseLabel(question.key, answers[question.key]);
-      }
-    }
+
+  const response = await fetch(`${API_URL}/feedback`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(backendPayload),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => null);
+    throw new Error(errorBody?.message || t('Chưa thể lưu góp ý. Vui lòng kiểm tra kết nối mạng và thử lại.'));
   }
 
-  // Use the public Capture API for an HTTP acknowledgement. SDK capture() only confirms queuing.
-  // Reusing the UUID on retries lets PostHog eventually deduplicate an ambiguous timeout.
-  const response = await fetch(`${analytics.apiHost}/i/v0/e/`, {
-    method: 'POST', mode: 'cors', credentials: 'omit', referrerPolicy: 'no-referrer',
-    headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(12_000),
-    body: JSON.stringify({ api_key: analytics.projectKey, event: nativeSurvey ? 'survey sent' : 'feedback_submitted',
-      distinct_id: analytics.distinctId, properties, uuid: submission.id, timestamp: submission.timestamp }),
-  });
-  if (!response.ok) throw new Error('Dịch vụ góp ý chưa nhận được phản hồi. Nội dung vẫn được giữ để bạn thử lại.');
-  const receipt = await response.json().catch(() => null);
-  if (receipt?.status === 0 || receipt?.error) throw new Error('Dịch vụ góp ý từ chối phản hồi. Nội dung vẫn được giữ để bạn thử lại.');
-  try { sessionStorage.setItem(cooldownKey, String(Date.now())); } catch { /* Storage is optional. */ }
+  // Optionally send to PostHog if available, without blocking on error
+  try {
+    const analytics = await getFeedbackAnalyticsContext();
+    const cooldownKey = `${COOLDOWN_KEY}.${analytics.distinctId}`;
+    try {
+      const last = Number(sessionStorage.getItem(cooldownKey));
+      if (last && Date.now() - last < COOLDOWN_MS) {
+        // Cooldown warning only if needed
+      }
+    } catch { /* Storage is optional. */ }
+
+    const properties = {
+      distinct_id: analytics.distinctId, $session_id: analytics.sessionId,
+      $process_person_profile: analytics.identified,
+      app_name: 'DoroStudy', app_environment: import.meta.env.PROD ? 'production' : 'development',
+      form: kind, survey_version: FEEDBACK_VERSION, entry_point: entryPoint,
+      feedback_id: submission.id, page_path: window.location.pathname, language: getLanguage(),
+      viewport: window.innerWidth <= 600 ? 'mobile' : 'desktop',
+      ...feedbackCampaign(),
+      ...Object.fromEntries(Object.entries(answers).filter(([key]) => key !== 'comment')),
+      feedback_comment: answers.comment,
+      ...(kind === 'ai' ? { reflection_id: String(reflection.id), ai_source: reflection.source || (reflection.aiAvailable ? 'gemini' : 'unavailable') } : {}),
+    };
+    const nativeSurvey = /^[a-f0-9-]{36}$/i.test(SURVEY_IDS[kind]);
+    if (nativeSurvey) {
+      properties.$survey_id = SURVEY_IDS[kind];
+      properties.$survey_iteration = 0;
+      properties.$survey_submission_id = submission.id;
+      properties.$survey_completed = true;
+      properties.$survey_questions = FEEDBACK_SURVEYS[kind].questions.map(({ id, question }) => ({ id, question }));
+      for (const question of FEEDBACK_SURVEYS[kind].questions) {
+        if (answers[question.key] !== undefined && answers[question.key] !== '') {
+          properties[`$survey_response_${question.id}`] = responseLabel(question.key, answers[question.key]);
+        }
+      }
+    }
+
+    await fetch(`${analytics.apiHost}/i/v0/e/`, {
+      method: 'POST', mode: 'cors', credentials: 'omit', referrerPolicy: 'no-referrer',
+      headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(6000),
+      body: JSON.stringify({ api_key: analytics.projectKey, event: nativeSurvey ? 'survey sent' : 'feedback_submitted',
+        distinct_id: analytics.distinctId, properties, uuid: submission.id, timestamp: submission.timestamp }),
+    }).catch(() => null);
+
+    try { sessionStorage.setItem(cooldownKey, String(Date.now())); } catch { /* Storage is optional. */ }
+  } catch (err) {
+    // If PostHog is disabled or blocked, the feedback is already safely stored in database.
+    console.warn('Analytics capture skipped:', err.message);
+  }
 }
