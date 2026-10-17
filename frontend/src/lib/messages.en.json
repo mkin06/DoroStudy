@@ -213,6 +213,8 @@
   "Bạn học {0} hiệu quả hơn khung giờ vừa rồi": "You study {0} more effectively at a different time",
   "Hoàn thành phiên học! 🎉": "Session complete! 🎉",
   "15 giây để AI hiểu phiên học của bạn — còn": "15 seconds to help AI understand your session — remaining",
+  "15 giây để AI hiểu phiên học của bạn — còn {0}s": "15 seconds to help AI understand your session — {0}s remaining",
+  "Chọn mức hoàn thành ở câu đầu tiên để bắt đầu đếm ngược 15 giây.": "Choose your completion level in the first question to start the 15-second countdown.",
   "Bạn hoàn thành bao nhiêu % mục tiêu?": "How much of your goal did you complete?",
   "Mức độ tập trung của bạn?": "How focused were you?",
   "Mức độ tập trung": "Focus level",

@@ -24,7 +24,7 @@ const DISTRACTIONS = [
   { id: 'none', label: '✅ Không xao nhãng' },
 ];
 
-// Yêu cầu nghiệp vụ: popup chiếm tối đa 15 giây của user.
+// Đếm 15 giây sau khi người dùng chủ động tương tác với câu hỏi đầu tiên.
 const COUNTDOWN_SECONDS = 15;
 
 /**
@@ -58,6 +58,8 @@ export default function ReflectionModal({
   const [quotaNotice, setQuotaNotice] = useState(null);
   const [error, setError] = useState(null);
   const [secondsLeft, setSecondsLeft] = useState(COUNTDOWN_SECONDS);
+  const [countdownStarted, setCountdownStarted] = useState(false);
+  const secondsLeftRef = useRef(COUNTDOWN_SECONDS);
   // Màn hình kết quả mặc định thu gọn. Người ta vừa học xong và đang muốn nghỉ, không phải
   // đang muốn đọc báo cáo — ai cần chi tiết thì bấm một cái là có.
   const [showDetails, setShowDetails] = useState(false);
@@ -78,7 +80,7 @@ export default function ReflectionModal({
     return () => document.removeEventListener('visibilitychange', recordVisibleResult);
   }, [step, feedback]);
 
-  // Bộ đếm chỉ phụ thuộc vào `step`. Handler và lựa chọn hiện tại đi qua ref để việc user
+  // Handler và lựa chọn hiện tại đi qua ref để việc user
   // đổi slider/emoji không reset lại đồng hồ 15 giây.
   const submitRef = useRef(null);
   const closeRef = useRef(onClose);
@@ -109,6 +111,9 @@ export default function ReflectionModal({
         return;
       }
       setError(err.message || t("Có lỗi xảy ra, vui lòng thử lại."));
+      secondsLeftRef.current = COUNTDOWN_SECONDS;
+      setSecondsLeft(COUNTDOWN_SECONDS);
+      setCountdownStarted(false);
       setStep('questions');
     }
   }, [sessionId, completionPercent, focusLevel, energyLevel, distraction, subject, step, language]);
@@ -119,19 +124,25 @@ export default function ReflectionModal({
     focusLevelRef.current = focusLevel;
   }, [handleSubmit, onClose, focusLevel]);
 
-  // Chỉ tính 15 giây khi người dùng đang nhìn thấy khảo sát. Nếu phiên kết thúc ở tab
-  // nền, khảo sát sẽ chờ nguyên vẹn đến lúc họ quay lại thay vì tự đóng mà họ không biết.
+  // Chờ tương tác với câu đầu tiên rồi mới đếm; nhìn thấy popup hoặc focus bằng Tab
+  // chưa phải bắt đầu trả lời. Các lựa chọn tiếp theo không khởi động lại bộ đếm.
+  const startAnswering = () => setCountdownStarted(true);
+
+  // Chỉ tính thời gian khi khảo sát đang hiển thị. Việc gửi/đóng nằm ngoài state updater
+  // để React StrictMode không gây gửi trùng khi kiểm tra tính thuần của updater.
   useEffect(() => {
-    if (step !== 'questions') return undefined;
+    if (step !== 'questions' || !countdownStarted) return undefined;
 
     let interval;
     const stopCountdown = () => clearInterval(interval);
     const startCountdown = () => {
       stopCountdown();
-      if (document.hidden) return;
+      if (document.hidden || secondsLeftRef.current === 0) return;
       interval = setInterval(() => {
-      setSecondsLeft((prev) => {
-        if (prev > 1) return prev - 1;
+        const next = Math.max(0, secondsLeftRef.current - 1);
+        secondsLeftRef.current = next;
+        setSecondsLeft(next);
+        if (next > 0) return;
         stopCountdown();
         // Đã chọn đủ thì gửi luôn, chưa chọn gì thì đóng — không chặn màn hình user
         if (focusLevelRef.current > 0) {
@@ -139,8 +150,6 @@ export default function ReflectionModal({
         } else {
           closeRef.current?.();
         }
-        return 0;
-      });
       }, 1000);
     };
 
@@ -151,7 +160,7 @@ export default function ReflectionModal({
       stopCountdown();
       document.removeEventListener('visibilitychange', startCountdown);
     };
-  }, [step]);
+  }, [step, countdownStarted]);
 
   const countdownPercent = Math.round((secondsLeft / COUNTDOWN_SECONDS) * 100);
   const reward = feedback?.reward;
@@ -203,7 +212,9 @@ export default function ReflectionModal({
         {step === 'questions' && (
           <>
             <h2 className="reflection-title">{t("Hoàn thành phiên học! 🎉")}</h2>
-            <p className="reflection-subtitle">{t("15 giây để AI hiểu phiên học của bạn — còn")}{secondsLeft}s
+            <p className="reflection-subtitle">{countdownStarted
+              ? t("15 giây để AI hiểu phiên học của bạn — còn {0}s", [secondsLeft])
+              : t("Chọn mức hoàn thành ở câu đầu tiên để bắt đầu đếm ngược 15 giây.")}
             </p>
             <div className="reflection-countdown" aria-hidden="true">
               <div className="reflection-countdown-bar" style={{ width: `${countdownPercent}%` }} />
@@ -221,7 +232,15 @@ export default function ReflectionModal({
                   max="100"
                   step="5"
                   value={completionPercent}
-                  onChange={(e) => setCompletionPercent(Number(e.target.value))}
+                  onPointerDown={startAnswering}
+                  onClick={startAnswering}
+                  onKeyDown={(e) => {
+                    if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'].includes(e.key)) startAnswering();
+                  }}
+                  onChange={(e) => {
+                    startAnswering();
+                    setCompletionPercent(Number(e.target.value));
+                  }}
                 />
                 <span className="reflection-slider-value">{completionPercent}%</span>
               </div>
