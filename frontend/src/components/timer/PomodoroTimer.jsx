@@ -697,7 +697,7 @@ const handleMenuItemClick = useCallback(async (itemId) => {
             duration_minutes: presetTimes[0],
             break_minutes: presetTimes[1],
           });
-          toast.success(t("Đã lưu phiên học. Hãy dành 15 giây để phản hồi nhé!"));
+          toast.success(t("Đã lưu phiên học. Bạn có thể phản hồi khi sẵn sàng."));
           handleStartBreak();
           // Mở popup reflection (user trả lời trong lúc nghỉ, có thể skip)
           setReflectionSessionId(saved.id);

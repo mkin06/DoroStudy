@@ -37,8 +37,8 @@
     background: rgba(255, 255, 255, 0.1);
     border: none;
     color: rgba(255, 255, 255, 0.6);
-    width: 32px;
-    height: 32px;
+    width: 44px;
+    height: 44px;
     border-radius: 8px;
     font-size: 18px;
     cursor: pointer;
@@ -54,7 +54,7 @@
 }
 
 .reflection-title {
-    margin: 0 24px 4px 0;
+    margin: 0 48px 4px 0;
     font-size: 24px;
     font-weight: 700;
 }
@@ -319,22 +319,6 @@
     font-size: 14px;
     line-height: 1.6;
     margin: 10px 0 20px;
-}
-
-/* Thanh đếm ngược 15 giây của popup reflection */
-.reflection-countdown {
-  height: 4px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.15);
-  overflow: hidden;
-  margin: 0 0 18px;
-}
-
-.reflection-countdown-bar {
-  height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #6ee7b7, #3b82f6);
-  transition: width 1s linear;
 }
 
 /* ===== Màn hình kết quả: ưu tiên tín hiệu thị giác hơn chữ ===== */

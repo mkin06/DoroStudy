@@ -24,13 +24,10 @@ const DISTRACTIONS = [
   { id: 'none', label: '✅ Không xao nhãng' },
 ];
 
-// Đếm 15 giây sau khi người dùng chủ động tương tác với câu hỏi đầu tiên.
-const COUNTDOWN_SECONDS = 15;
-
 /**
  * Popup reflection sau mỗi phiên Pomodoro.
  *
- * Bốn câu hỏi, tất cả đều là chạm/kéo — không gõ chữ, nên vẫn vừa 15 giây. Câu năng lượng
+ * Bốn câu hỏi chạm/kéo, không giới hạn thời gian. Câu năng lượng
  * là câu duy nhất được thêm so với bản đầu: nó là biến giải thích cho điểm tập trung
  * (hết pin hay bị xao nhãng?) và là dữ liệu để dựng ngưỡng cạn kiệt năng lượng.
  *
@@ -57,9 +54,6 @@ export default function ReflectionModal({
   const [feedback, setFeedback] = useState(null);
   const [quotaNotice, setQuotaNotice] = useState(null);
   const [error, setError] = useState(null);
-  const [secondsLeft, setSecondsLeft] = useState(COUNTDOWN_SECONDS);
-  const [countdownStarted, setCountdownStarted] = useState(false);
-  const secondsLeftRef = useRef(COUNTDOWN_SECONDS);
   // Màn hình kết quả mặc định thu gọn. Người ta vừa học xong và đang muốn nghỉ, không phải
   // đang muốn đọc báo cáo — ai cần chi tiết thì bấm một cái là có.
   const [showDetails, setShowDetails] = useState(false);
@@ -79,12 +73,6 @@ export default function ReflectionModal({
     document.addEventListener('visibilitychange', recordVisibleResult);
     return () => document.removeEventListener('visibilitychange', recordVisibleResult);
   }, [step, feedback]);
-
-  // Handler và lựa chọn hiện tại đi qua ref để việc user
-  // đổi slider/emoji không reset lại đồng hồ 15 giây.
-  const submitRef = useRef(null);
-  const closeRef = useRef(onClose);
-  const focusLevelRef = useRef(focusLevel);
 
   const handleSubmit = useCallback(async () => {
     if (focusLevel === 0 || step !== 'questions') return;
@@ -111,58 +99,10 @@ export default function ReflectionModal({
         return;
       }
       setError(err.message || t("Có lỗi xảy ra, vui lòng thử lại."));
-      secondsLeftRef.current = COUNTDOWN_SECONDS;
-      setSecondsLeft(COUNTDOWN_SECONDS);
-      setCountdownStarted(false);
       setStep('questions');
     }
   }, [sessionId, completionPercent, focusLevel, energyLevel, distraction, subject, step, language]);
 
-  useEffect(() => {
-    submitRef.current = handleSubmit;
-    closeRef.current = onClose;
-    focusLevelRef.current = focusLevel;
-  }, [handleSubmit, onClose, focusLevel]);
-
-  // Chờ tương tác với câu đầu tiên rồi mới đếm; nhìn thấy popup hoặc focus bằng Tab
-  // chưa phải bắt đầu trả lời. Các lựa chọn tiếp theo không khởi động lại bộ đếm.
-  const startAnswering = () => setCountdownStarted(true);
-
-  // Chỉ tính thời gian khi khảo sát đang hiển thị. Việc gửi/đóng nằm ngoài state updater
-  // để React StrictMode không gây gửi trùng khi kiểm tra tính thuần của updater.
-  useEffect(() => {
-    if (step !== 'questions' || !countdownStarted) return undefined;
-
-    let interval;
-    const stopCountdown = () => clearInterval(interval);
-    const startCountdown = () => {
-      stopCountdown();
-      if (document.hidden || secondsLeftRef.current === 0) return;
-      interval = setInterval(() => {
-        const next = Math.max(0, secondsLeftRef.current - 1);
-        secondsLeftRef.current = next;
-        setSecondsLeft(next);
-        if (next > 0) return;
-        stopCountdown();
-        // Đã chọn đủ thì gửi luôn, chưa chọn gì thì đóng — không chặn màn hình user
-        if (focusLevelRef.current > 0) {
-          submitRef.current?.();
-        } else {
-          closeRef.current?.();
-        }
-      }, 1000);
-    };
-
-    startCountdown();
-    document.addEventListener('visibilitychange', startCountdown);
-
-    return () => {
-      stopCountdown();
-      document.removeEventListener('visibilitychange', startCountdown);
-    };
-  }, [step, countdownStarted]);
-
-  const countdownPercent = Math.round((secondsLeft / COUNTDOWN_SECONDS) * 100);
   const reward = feedback?.reward;
   const noteInsight = feedback?.noteInsight;
   const band = scoreBand(feedback?.focusScore);
@@ -207,18 +147,12 @@ export default function ReflectionModal({
   return (
     <div className="reflection-backdrop" role="dialog" aria-modal="true">
       <div className="reflection-modal">
-        <button className="reflection-close" onClick={onClose} aria-label={t("Đóng")}>✕</button>
+        <button type="button" className="reflection-close" onClick={onClose} aria-label={t("Đóng")} title={t("Đóng")}>✕</button>
 
         {step === 'questions' && (
           <>
             <h2 className="reflection-title">{t("Hoàn thành phiên học! 🎉")}</h2>
-            <p className="reflection-subtitle">{countdownStarted
-              ? t("15 giây để AI hiểu phiên học của bạn — còn {0}s", [secondsLeft])
-              : t("Chọn mức hoàn thành ở câu đầu tiên để bắt đầu đếm ngược 15 giây.")}
-            </p>
-            <div className="reflection-countdown" aria-hidden="true">
-              <div className="reflection-countdown-bar" style={{ width: `${countdownPercent}%` }} />
-            </div>
+            <p className="reflection-subtitle">{t("Trả lời theo thời gian của bạn. Bấm X để đóng hoặc Xem kết quả để gửi.")}</p>
 
             {error && <div className="reflection-error">{t(error)}</div>}
 
@@ -232,15 +166,7 @@ export default function ReflectionModal({
                   max="100"
                   step="5"
                   value={completionPercent}
-                  onPointerDown={startAnswering}
-                  onClick={startAnswering}
-                  onKeyDown={(e) => {
-                    if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'].includes(e.key)) startAnswering();
-                  }}
-                  onChange={(e) => {
-                    startAnswering();
-                    setCompletionPercent(Number(e.target.value));
-                  }}
+                  onChange={(e) => setCompletionPercent(Number(e.target.value))}
                 />
                 <span className="reflection-slider-value">{completionPercent}%</span>
               </div>
